@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# project plan + design reference (do not commit)
+cs_35l_proj_plan_init.pdf
+/wireframe/
