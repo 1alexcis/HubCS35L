@@ -1,20 +1,20 @@
-export type Role = 'admin' | 'member' | 'follower' | 'applicant' | 'none'
+export type Role = 'admin' | 'member' | 'follower' | 'applicant' | 'visitor'
 export type Visibility = 'public' | 'followers' | 'members'
-export type AppStatus = 'pending' | 'accepted' | 'rejected'
-
-export interface User {
-  id: string
-  name: string
-  email: string
-}
+export type AppStatus = 'open' | 'closed'
+export type ApplicantStatus = 'pending' | 'accepted' | 'rejected'
 
 export interface Org {
   id: string
   name: string
-  description: string
-  logoUrl: string
-  visibility: 'public' | 'private'
+  short: string
+  tagline: string
+  color: string
+  logo: string
   category: string
+  about: string
+  members: number
+  followers: number
+  founded: number
 }
 
 export interface Event {
@@ -25,6 +25,7 @@ export interface Event {
   location: string
   description: string
   visibility: Visibility
+  rsvps: number
 }
 
 export interface Announcement {
@@ -32,30 +33,41 @@ export interface Announcement {
   orgId: string
   title: string
   body: string
+  posted: Date
   visibility: Visibility
-  createdAt: Date
   urgent?: boolean
-}
-
-export interface Question {
-  id: string
-  prompt: string
+  reactions?: Record<string, number>
 }
 
 export interface Application {
   id: string
   orgId: string
-  questions: Question[]
+  name: string
+  questions: string[]
   deadline: Date
-  open: boolean
+  status: AppStatus
+  submissions: number
+  capacity: number
 }
 
 export interface Applicant {
   id: string
-  userId: string
   name: string
+  initials: string
+  major: string
   applicationId: string
   orgId: string
-  answers: Record<string, string>
-  status: AppStatus
+  submitted: Date
+  status: ApplicantStatus
+  answers: string[]
+}
+
+export interface CurrentUser {
+  name: string
+  email: string
+  initials: string
+  major: string
+  roles: Record<string, Role>
+  adminOf: string
+  rsvped: Set<string>
 }
