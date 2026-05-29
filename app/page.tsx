@@ -1,25 +1,39 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Icon } from '@/components/ui/icon'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
 
 function isUCLAEmail(email: string) {
   return email.endsWith('@ucla.edu') || email.endsWith('@g.ucla.edu')
 }
 
 export default function SignInPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [sent, setSent] = useState(false)
 
-  function handleContinue(e: React.FormEvent) {
+  async function handleContinue(e: React.FormEvent) {
     e.preventDefault()
     if (!isUCLAEmail(email)) {
       setError('Must be a UCLA email (@g.ucla.edu or @ucla.edu)')
       return
     }
-    router.push('/onboarding')
+    const supabase = createClient()
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin + '/auth/callback' },
+    })
+    if (err) { setError(err.message); return }
+    setSent(true)
+  }
+
+  async function handleGoogle() {
+    const supabase = createClient()
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/auth/callback' },
+    })
   }
 
   return (
@@ -79,28 +93,34 @@ export default function SignInPage() {
           <h2 className="font-serif text-[1.6rem] font-semibold text-ink-1 mb-1">Sign in</h2>
           <p className="text-sm text-ink-3 mb-8">Use your UCLA email address to get started.</p>
 
-          <form onSubmit={handleContinue} className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-xs font-medium text-ink-2">
-                School email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={e => { setEmail(e.target.value); setError('') }}
-                placeholder="you@g.ucla.edu"
-                className="h-9 px-3 rounded-lg border border-border bg-bg-1 text-sm text-ink-1 placeholder:text-ink-3 outline-none focus:ring-2 focus:border-accent transition-colors"
-              />
-              {error && (
-                <p className="text-xs" style={{ color: '#a83a3a' }}>{error}</p>
-              )}
+          {sent ? (
+            <div className="rounded-lg border border-border bg-bg-1 px-4 py-5 text-sm text-ink-2">
+              Check your email — we sent a link to <span className="font-medium text-ink-1">{email}</span>.
             </div>
+          ) : (
+            <form onSubmit={handleContinue} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="email" className="text-xs font-medium text-ink-2">
+                  School email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError('') }}
+                  placeholder="you@g.ucla.edu"
+                  className="h-9 px-3 rounded-lg border border-border bg-bg-1 text-sm text-ink-1 placeholder:text-ink-3 outline-none focus:ring-2 focus:border-accent transition-colors"
+                />
+                {error && (
+                  <p className="text-xs" style={{ color: '#a83a3a' }}>{error}</p>
+                )}
+              </div>
 
-            <Button variant="primary" size="md" full type="submit">
-              Continue
-            </Button>
-          </form>
+              <Button variant="primary" size="md" full type="submit">
+                Continue
+              </Button>
+            </form>
+          )}
 
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-border" />
@@ -112,7 +132,7 @@ export default function SignInPage() {
             variant="secondary"
             size="md"
             full
-            onClick={() => router.push('/onboarding')}
+            onClick={handleGoogle}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden style={{ flexShrink: 0 }}>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
