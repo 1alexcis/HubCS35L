@@ -2,11 +2,13 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ORGS, ME } from '@/lib/data'
-import type { Org, Visibility } from '@/lib/types'
+import { ORGS, ME, APPLICANTS, APPLICATIONS } from '@/lib/data'
+import type { ApplicantStatus, Org, Visibility } from '@/lib/types'
+import { relTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, VisibilityChip } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/avatar'
 import { OrgLogo } from '@/components/ui/org-logo'
 import { Icon, type IconName } from '@/components/ui/icon'
 
@@ -92,7 +94,7 @@ export default function AdminPage() {
         <div>
           {composer === 'event' && <EventComposer org={org} event={event} setEvent={setEvent} />}
           {composer === 'announcement' && <AnnouncementComposer ann={ann} setAnn={setAnn} />}
-          {composer === 'applications' && <Placeholder text="Review applications — coming next." />}
+          {composer === 'applications' && <ReviewQueue />}
           {composer === 'settings' && <Placeholder text="Org settings — coming in Milestone 4." />}
         </div>
       </div>
@@ -310,6 +312,99 @@ function Placeholder({ text }: { text: string }) {
   return (
     <Card>
       <div className="px-4 py-8 text-center text-sm text-ink-3">{text}</div>
+    </Card>
+  )
+}
+
+const statusTone = (s: ApplicantStatus) => (s === 'accepted' ? 'green' : s === 'rejected' ? 'red' : 'neutral')
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+function ReviewQueue() {
+  const [selectedId, setSelectedId] = useState(APPLICANTS[0].id)
+  const [statuses, setStatuses] = useState<Record<string, ApplicantStatus>>(() =>
+    Object.fromEntries(APPLICANTS.map((a) => [a.id, a.status])),
+  )
+  const sel = APPLICANTS.find((a) => a.id === selectedId)!
+  const app = APPLICATIONS.find((a) => a.id === sel.applicationId)
+  const setStatus = (id: string, st: ApplicantStatus) => setStatuses((s) => ({ ...s, [id]: st }))
+
+  const counts = { pending: 0, accepted: 0, rejected: 0 }
+  Object.values(statuses).forEach((v) => (counts[v] += 1))
+
+  return (
+    <Card padding={0}>
+      <div className="border-b border-border px-[18px] py-4">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Review queue</div>
+        <div className="mt-1 flex items-baseline justify-between">
+          <h2 className="font-serif font-medium text-ink-1" style={{ fontSize: 22, letterSpacing: '-0.015em' }}>
+            {app?.name ?? 'Applications'}
+          </h2>
+          <div className="flex gap-1.5">
+            <Badge tone="neutral">{counts.pending} pending</Badge>
+            <Badge tone="green">{counts.accepted} accepted</Badge>
+            <Badge tone="red">{counts.rejected} rejected</Badge>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[260px_1fr]">
+        <div className="max-h-[540px] overflow-auto border-r border-border">
+          {APPLICANTS.map((a) => {
+            const on = a.id === selectedId
+            return (
+              <button
+                key={a.id}
+                onClick={() => setSelectedId(a.id)}
+                className={`flex w-full items-start gap-2.5 border-b border-border px-3.5 py-3 text-left ${
+                  on ? 'bg-bg-2' : ''
+                }`}
+              >
+                <Avatar name={a.name} initials={a.initials} size={32} color="#3b3a8a" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13.5px] font-medium text-ink-1">{a.name}</div>
+                  <div className="mt-px text-[11.5px] text-ink-3">{a.major}</div>
+                  <div className="mt-1.5">
+                    <Badge tone={statusTone(statuses[a.id])}>{cap(statuses[a.id])}</Badge>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="p-5">
+          <div className="mb-4 flex items-center gap-3">
+            <Avatar name={sel.name} initials={sel.initials} size={44} color="#3b3a8a" />
+            <div className="flex-1">
+              <div className="text-base font-medium text-ink-1">{sel.name}</div>
+              <div className="text-[12.5px] text-ink-3">
+                {sel.major} · submitted {relTime(sel.submitted).toLowerCase()}
+              </div>
+            </div>
+            <Badge tone={statusTone(statuses[sel.id])}>{cap(statuses[sel.id])}</Badge>
+          </div>
+
+          <div className="flex flex-col gap-3.5">
+            {sel.answers.map((ans, i) => (
+              <div key={i}>
+                <div className="text-[11.5px] font-semibold uppercase tracking-[0.04em] text-ink-3">
+                  Q{i + 1}. {app?.questions[i]}
+                </div>
+                <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-1">{ans}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
+            <Button variant="danger" icon="x" onClick={() => setStatus(sel.id, 'rejected')}>
+              Reject
+            </Button>
+            <Button variant="primary" icon="check" onClick={() => setStatus(sel.id, 'accepted')}>
+              Accept
+            </Button>
+          </div>
+        </div>
+      </div>
     </Card>
   )
 }
