@@ -70,11 +70,6 @@ export default function DashboardPage() {
             <SectionHeader
               title="Upcoming"
               subtitle="Events from your followed orgs, next 14 days"
-              action={
-                <Button variant="ghost" size="sm" iconRight="arrow_r" onClick={() => router.push('/calendar')}>
-                  Calendar
-                </Button>
-              }
             />
             <div className="flex flex-col gap-2.5">
               {upcoming.map((e) => {
