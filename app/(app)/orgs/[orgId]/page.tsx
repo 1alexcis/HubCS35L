@@ -1,8 +1,8 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation'
-import { ORGS, EVENTS, ANNOUNCEMENTS, ME } from '@/lib/data'
-import type { Announcement, Event, Org, Visibility } from '@/lib/types'
-import { fmtDate, fmtTime, relTime } from '@/lib/format'
+import { ORGS, EVENTS, ME } from '@/lib/data'
+import type { Event, Visibility } from '@/lib/types'
+import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, VisibilityChip } from '@/components/ui/badge'
@@ -15,22 +15,19 @@ export default function OrgPage() {
   const org = ORGS.find((o) => o.id === orgId)
   if (!org) return <p className="text-ink-2">Org not found.</p>
 
-  const role = ME.roles[orgId] ?? 'visitor'
+  const role = ME.roles[orgId] ?? 'guest'
   const isAdmin = role === 'admin' || orgId === ME.adminOf
-  const isMember = role === 'member' || isAdmin
-  const isFollowerPlus = isMember || role === 'follower' || role === 'applicant'
-  const canSee = (v: Visibility) =>
-    v === 'public' || (v === 'followers' && isFollowerPlus) || (v === 'members' && isMember)
+  const isFollower = role === 'follower' || isAdmin
+  const isGuest = !isAdmin && !isFollower
+  const canSee = (v: Visibility) => v === 'public' || v === 'followers'
 
   const events = EVENTS.filter((e) => e.orgId === orgId)
   const visibleEvents = events.filter((e) => canSee(e.visibility))
-  const visibleAnns = ANNOUNCEMENTS.filter((a) => a.orgId === orgId && canSee(a.visibility))
   const hiddenEvents = events.length - visibleEvents.length
 
-  const feed = [
-    ...visibleAnns.map((a) => ({ kind: 'ann' as const, t: a.posted.getTime(), a })),
-    ...visibleEvents.slice(0, 3).map((e) => ({ kind: 'event' as const, t: e.date.getTime(), e })),
-  ].sort((x, y) => y.t - x.t)
+  const eventsForDisplay = visibleEvents
+    .slice()
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
 
   return (
     <div className="-m-6">
@@ -53,8 +50,7 @@ export default function OrgPage() {
               {org.name}
             </h1>
             <div className="mt-1 text-[13.5px] text-ink-3">
-              {org.category} · Founded {org.founded} · {org.followers.toLocaleString()} followers · {org.members}{' '}
-              members
+              {org.category} · Founded {org.founded} · {org.followers.toLocaleString()} followers
             </div>
           </div>
           <div className="flex gap-2 pt-1">
@@ -67,14 +63,6 @@ export default function OrgPage() {
                   Post event
                 </Button>
               </>
-            ) : isMember ? (
-              <Button variant="soft" icon="check">
-                Member
-              </Button>
-            ) : role === 'applicant' ? (
-              <Button variant="soft" icon="clock">
-                Application submitted
-              </Button>
             ) : role === 'follower' ? (
               <Button variant="soft" icon="check">
                 Following
@@ -92,21 +80,17 @@ export default function OrgPage() {
         <div className="mt-6 grid grid-cols-[1fr_280px] gap-8">
           <div>
             <div className="mb-5 flex gap-1 border-b border-border">
-              <span className="border-b-2 border-accent px-3.5 py-2.5 text-[13.5px] font-medium text-ink-1">Feed</span>
+              <span className="border-b-2 border-accent px-3.5 py-2.5 text-[13.5px] font-medium text-ink-1">Events</span>
             </div>
-            {feed.length === 0 ? (
+            {eventsForDisplay.length === 0 ? (
               <Card>
                 <div className="px-4 py-8 text-center text-sm text-ink-3">Nothing posted yet.</div>
               </Card>
             ) : (
               <div className="flex flex-col gap-3">
-                {feed.map((it) =>
-                  it.kind === 'ann' ? (
-                    <AnnouncementCard key={it.a.id} a={it.a} org={org} />
-                  ) : (
-                    <EventRow key={it.e.id} e={it.e} />
-                  ),
-                )}
+                {eventsForDisplay.map((event) => (
+                  <EventRow key={event.id} e={event} locked={isGuest && event.visibility === 'followers'} />
+                ))}
               </div>
             )}
           </div>
@@ -123,10 +107,7 @@ export default function OrgPage() {
                   <Icon name="globe" size={13} /> Public posts visible to everyone
                 </div>
                 <div className="flex items-center gap-2">
-                  <Icon name="eye" size={13} /> Follower posts visible to {isFollowerPlus ? 'you' : 'followers only'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Icon name="lock" size={13} /> Member posts visible to {isMember ? 'you' : 'accepted members only'}
+                  <Icon name="eye" size={13} /> Follower posts visible to {isFollower ? 'you' : 'followers only'}
                 </div>
               </div>
             </Card>
@@ -138,7 +119,11 @@ export default function OrgPage() {
 }
 
 function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number }) {
-  if (role === 'visitor') {
+  const isAdmin = role === 'admin'
+  const isFollower = role === 'follower' || isAdmin
+  const isGuest = !isAdmin && !isFollower
+
+  if (isGuest) {
     return (
       <Card
         style={{
@@ -159,17 +144,7 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
       </Card>
     )
   }
-  if (role === 'follower' || role === 'applicant') {
-    return (
-      <div className="px-1 text-[12.5px] text-ink-3">
-        {hiddenEvents > 0
-          ? `${hiddenEvents} member-only event${hiddenEvents === 1 ? '' : 's'} hidden.`
-          : 'You see all public and follower posts.'}
-        {role === 'applicant' ? ' Your application is under review.' : ''}
-      </div>
-    )
-  }
-  if (role === 'admin') {
+  if (isAdmin) {
     return (
       <Card
         style={{
@@ -186,46 +161,19 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
       </Card>
     )
   }
+  if (isFollower) {
+    return (
+      <div className="px-1 text-[12.5px] text-ink-3">
+        {hiddenEvents > 0
+          ? `${hiddenEvents} unsupported event${hiddenEvents === 1 ? '' : 's'} hidden.`
+          : 'You see all public and follower events.'}
+      </div>
+    )
+  }
   return null
 }
 
-function AnnouncementCard({ a, org }: { a: Announcement; org: Org }) {
-  return (
-    <Card>
-      <div className="mb-2 flex items-center gap-2.5">
-        <OrgLogo org={org} size={22} radius={5} />
-        <div className="text-[12.5px] font-medium text-ink-2">{org.name}</div>
-        <span className="text-[11.5px] text-ink-3">·</span>
-        <span className="text-[11.5px] text-ink-3">{relTime(a.posted)}</span>
-        <span className="ml-auto flex gap-1.5">
-          {a.urgent && (
-            <Badge tone="red" icon="flag">
-              Urgent
-            </Badge>
-          )}
-          <VisibilityChip visibility={a.visibility} />
-        </span>
-      </div>
-      <div className="text-base font-medium text-ink-1">{a.title}</div>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{a.body}</p>
-      {a.reactions && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {Object.entries(a.reactions).map(([emoji, count]) => (
-            <span
-              key={emoji}
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-bg-2 px-2.5 py-1 text-xs text-ink-2"
-            >
-              <span>{emoji}</span>
-              <span className="tabular-nums">{count}</span>
-            </span>
-          ))}
-        </div>
-      )}
-    </Card>
-  )
-}
-
-function EventRow({ e }: { e: Event }) {
+function EventRow({ e, locked = false }: { e: Event; locked?: boolean }) {
   return (
     <Card padding={0} hoverable>
       <div className="grid grid-cols-[76px_1fr_auto] items-center">
@@ -238,18 +186,28 @@ function EventRow({ e }: { e: Event }) {
         </div>
         <div className="min-w-0 px-4 py-3.5">
           <div className="mb-1 flex items-center gap-2">
-            <Badge icon="calendar">Event</Badge>
+            <Badge icon={locked ? 'lock' : 'calendar'}>{locked ? 'Locked' : 'Event'}</Badge>
             <VisibilityChip visibility={e.visibility} />
           </div>
           <div className="text-[15px] font-medium text-ink-1">{e.title}</div>
-          <div className="mt-1 text-[12.5px] text-ink-3">
-            {e.location} · {e.rsvps} going
-          </div>
+          {locked ? (
+            <div className="mt-1 text-[12.5px] text-ink-3">Follow this org to view event details.</div>
+          ) : (
+            <div className="mt-1 text-[12.5px] text-ink-3">
+              {e.location} · {e.rsvps} going
+            </div>
+          )}
         </div>
         <div className="p-3.5">
-          <Button variant="secondary" size="sm">
-            RSVP
-          </Button>
+          {locked ? (
+            <Button variant="soft" size="sm" icon="lock">
+              Locked
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm">
+              RSVP
+            </Button>
+          )}
         </div>
       </div>
     </Card>
