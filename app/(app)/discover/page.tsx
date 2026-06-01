@@ -43,7 +43,8 @@ export default function DiscoverPage() {
       <div className="grid grid-cols-3 gap-3.5">
         {filtered.map((o) => {
           const role = ME.roles[o.id]
-          const following = ['follower', 'applicant', 'member'].includes(role) || o.id === ME.adminOf
+          const isAdmin = role === 'admin' || o.id === ME.adminOf
+          const isFollower = role === 'follower' || isAdmin
           return (
             <Card key={o.id} padding={0} hoverable onClick={() => router.push(`/orgs/${o.id}`)}>
               <div
@@ -60,12 +61,12 @@ export default function DiscoverPage() {
                 <div className="mt-3.5 flex items-center justify-between">
                   <div className="text-[11.5px] text-ink-3">{o.followers.toLocaleString()} followers</div>
                   <Button
-                    variant={following ? 'soft' : 'secondary'}
+                    variant={isFollower ? 'soft' : 'secondary'}
                     size="sm"
-                    icon={following ? 'check' : 'plus'}
+                    icon={isFollower ? 'check' : 'plus'}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {following ? 'Following' : 'Follow'}
+                    {isFollower ? 'Following' : 'Follow'}
                   </Button>
                 </div>
               </div>
