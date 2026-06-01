@@ -13,7 +13,7 @@ const NAV = [
 
 const MY_ORGS = ORGS.filter(o => {
   const r = ME.roles[o.id]
-  return r === 'admin' || r === 'member' || r === 'follower'
+  return r === 'admin' || r === 'follower'
 })
 
 export function Sidebar() {

@@ -59,12 +59,11 @@ export function Badge({ children, tone = "neutral", icon, className, style }: Ba
 }
 
 const VISIBILITY_MAP: Record<Visibility, { tone: BadgeTone; icon: IconName; label: string }> = {
-  public:    { tone: "neutral", icon: "globe", label: "Public" },
-  followers: { tone: "blue",    icon: "eye",   label: "Followers" },
-  members:   { tone: "gold",    icon: "lock",  label: "Members" },
+  public: { tone: "neutral", icon: "globe", label: "Public" },
+  followers: { tone: "blue", icon: "eye", label: "Followers" },
 };
 
 export function VisibilityChip({ visibility }: { visibility: Visibility }) {
-  const m = VISIBILITY_MAP[visibility] ?? VISIBILITY_MAP.public;
+  const m = VISIBILITY_MAP[visibility];
   return <Badge tone={m.tone} icon={m.icon}>{m.label}</Badge>;
 }

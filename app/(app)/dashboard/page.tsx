@@ -12,16 +12,16 @@ import { Icon } from '@/components/ui/icon'
 
 const orgOf = (id: string) => ORGS.find((o) => o.id === id)!
 
-const followed = ORGS.filter(
-  (o) => ['follower', 'applicant', 'member', 'admin'].includes(ME.roles[o.id]) || o.id === ME.adminOf,
-)
+const followed = ORGS.filter((o) => {
+  const role = ME.roles[o.id]
+  return role === 'follower' || role === 'admin' || o.id === ME.adminOf
+})
 const followedIds = new Set(followed.map((o) => o.id))
 
 function visible(visibility: Visibility, orgId: string): boolean {
   const role = orgId === ME.adminOf ? 'admin' : ME.roles[orgId]
   if (visibility === 'public') return true
-  if (visibility === 'followers') return role !== 'visitor'
-  if (visibility === 'members') return role === 'member' || role === 'admin'
+  if (visibility === 'followers') return role === 'follower' || role === 'admin'
   return false
 }
 
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <div className="text-[13.5px] font-medium text-ink-1">{o.name}</div>
                   <div className="text-[11.5px] text-ink-3">
-                    {o.id === ME.adminOf ? 'Admin' : ME.roles[o.id] === 'member' ? 'Member' : 'Follower'}
+                    {o.id === ME.adminOf || ME.roles[o.id] === 'admin' ? 'Admin' : 'Follower'}
                   </div>
                 </div>
                 <Icon name="chev_r" size={14} style={{ color: 'var(--ink-3)' }} />

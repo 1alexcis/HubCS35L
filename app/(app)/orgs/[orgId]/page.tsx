@@ -134,8 +134,8 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
         <div className="flex items-center gap-3">
           <Icon name="eye" size={16} style={{ color: 'var(--accent)' }} />
           <div className="flex-1 text-[13.5px] text-ink-2">
-            You&apos;re viewing this org as a visitor. <strong className="text-ink-1">Follow</strong> to see
-            follower-only posts and apply to open recruitment.
+            You&apos;re viewing this org as a guest. <strong className="text-ink-1">Follow</strong> to see
+            follower-only posts.
           </div>
           <Button variant="primary" size="sm" icon="plus">
             Follow
