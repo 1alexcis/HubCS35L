@@ -1,49 +1,83 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ORGS, EVENTS, ANNOUNCEMENTS, ME } from '@/lib/data'
-import type { Announcement, Event, Org, Visibility } from '@/lib/types'
-import { fmtDate, fmtTime, relTime } from '@/lib/format'
+import { createClient } from '@/lib/supabase/client'
+import { useMemberships } from '@/lib/hooks/useMemberships'
+import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, VisibilityChip } from '@/components/ui/badge'
 import { OrgLogo } from '@/components/ui/org-logo'
 import { Icon } from '@/components/ui/icon'
 
+type DBEvent = {
+  id: string
+  title: string
+  start_time: string
+  location: string | null
+  description: string | null
+  visibility: 'public' | 'followers'
+}
+
+type DBOrg = {
+  id: string
+  name: string
+  description: string | null
+  category: string | null
+  avatar_color: string | null
+  created_at: string
+  events: DBEvent[]
+}
+
 export default function OrgPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const router = useRouter()
-  const org = ORGS.find((o) => o.id === orgId)
+  const { getRole, loading: membLoading } = useMemberships()
+  const [org, setOrg] = useState<DBOrg | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+    async function load() {
+      try {
+        const { data } = await supabase
+          .from('organizations')
+          .select('*, events(*)')
+          .eq('id', orgId)
+          .single()
+        setOrg(data as DBOrg)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [orgId])
+
+  if (loading || membLoading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
   if (!org) return <p className="text-ink-2">Org not found.</p>
 
-  const role = ME.roles[orgId] ?? 'visitor'
-  const isAdmin = role === 'admin' || orgId === ME.adminOf
-  const isMember = role === 'member' || isAdmin
-  const isFollowerPlus = isMember || role === 'follower' || role === 'applicant'
-  const canSee = (v: Visibility) =>
-    v === 'public' || (v === 'followers' && isFollowerPlus) || (v === 'members' && isMember)
+  const role = getRole(orgId) ?? 'visitor'
+  const isAdmin = role === 'admin'
+  const isFollowerPlus = role === 'admin' || role === 'follower'
+  const color = org.avatar_color ?? '#4F46E5'
 
-  const events = EVENTS.filter((e) => e.orgId === orgId)
-  const visibleEvents = events.filter((e) => canSee(e.visibility))
-  const visibleAnns = ANNOUNCEMENTS.filter((a) => a.orgId === orgId && canSee(a.visibility))
-  const hiddenEvents = events.length - visibleEvents.length
-
-  const feed = [
-    ...visibleAnns.map((a) => ({ kind: 'ann' as const, t: a.posted.getTime(), a })),
-    ...visibleEvents.slice(0, 3).map((e) => ({ kind: 'event' as const, t: e.date.getTime(), e })),
-  ].sort((x, y) => y.t - x.t)
+  const visibleEvents = (org.events ?? []).filter(
+    (e) => e.visibility === 'public' || isFollowerPlus
+  )
+  const hiddenEvents = (org.events ?? []).length - visibleEvents.length
 
   return (
     <div className="-m-6">
       <div
         className="h-40"
         style={{
-          background: `linear-gradient(135deg, ${org.color} 0%, color-mix(in oklch, ${org.color} 55%, #0e1a36) 100%)`,
+          background: `linear-gradient(135deg, ${color} 0%, color-mix(in oklch, ${color} 55%, #0e1a36) 100%)`,
         }}
       />
       <div className="mx-auto max-w-[1100px] px-10 pb-16">
         <div className="-mt-[42px] mb-6">
           <div className="w-[84px] rounded-[18px]" style={{ boxShadow: '0 0 0 4px var(--bg-0)' }}>
-            <OrgLogo org={org} size={84} radius={18} />
+            <OrgLogo org={{ color, logo: org.name.slice(0, 2).toUpperCase() }} size={84} radius={18} />
           </div>
         </div>
 
@@ -52,10 +86,7 @@ export default function OrgPage() {
             <h1 className="font-serif font-medium text-ink-1" style={{ fontSize: 28, letterSpacing: '-0.02em' }}>
               {org.name}
             </h1>
-            <div className="mt-1 text-[13.5px] text-ink-3">
-              {org.category} · Founded {org.founded} · {org.followers.toLocaleString()} followers · {org.members}{' '}
-              members
-            </div>
+            <div className="mt-1 text-[13.5px] text-ink-3">{org.category}</div>
           </div>
           <div className="flex gap-2 pt-1">
             {isAdmin ? (
@@ -67,14 +98,6 @@ export default function OrgPage() {
                   Post event
                 </Button>
               </>
-            ) : isMember ? (
-              <Button variant="soft" icon="check">
-                Member
-              </Button>
-            ) : role === 'applicant' ? (
-              <Button variant="soft" icon="clock">
-                Application submitted
-              </Button>
             ) : role === 'follower' ? (
               <Button variant="soft" icon="check">
                 Following
@@ -94,19 +117,13 @@ export default function OrgPage() {
             <div className="mb-5 flex gap-1 border-b border-border">
               <span className="border-b-2 border-accent px-3.5 py-2.5 text-[13.5px] font-medium text-ink-1">Feed</span>
             </div>
-            {feed.length === 0 ? (
+            {visibleEvents.length === 0 ? (
               <Card>
                 <div className="px-4 py-8 text-center text-sm text-ink-3">Nothing posted yet.</div>
               </Card>
             ) : (
               <div className="flex flex-col gap-3">
-                {feed.map((it) =>
-                  it.kind === 'ann' ? (
-                    <AnnouncementCard key={it.a.id} a={it.a} org={org} />
-                  ) : (
-                    <EventRow key={it.e.id} e={it.e} />
-                  ),
-                )}
+                {visibleEvents.map((e) => <EventRow key={e.id} e={e} />)}
               </div>
             )}
           </div>
@@ -114,7 +131,7 @@ export default function OrgPage() {
           <aside className="flex flex-col gap-4">
             <Card>
               <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">About</div>
-              <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-2">{org.about}</p>
+              <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-2">{org.description}</p>
             </Card>
             <Card>
               <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Visibility</div>
@@ -124,9 +141,6 @@ export default function OrgPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Icon name="eye" size={13} /> Follower posts visible to {isFollowerPlus ? 'you' : 'followers only'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Icon name="lock" size={13} /> Member posts visible to {isMember ? 'you' : 'accepted members only'}
                 </div>
               </div>
             </Card>
@@ -159,13 +173,12 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
       </Card>
     )
   }
-  if (role === 'follower' || role === 'applicant') {
+  if (role === 'follower') {
     return (
       <div className="px-1 text-[12.5px] text-ink-3">
         {hiddenEvents > 0
           ? `${hiddenEvents} member-only event${hiddenEvents === 1 ? '' : 's'} hidden.`
           : 'You see all public and follower posts.'}
-        {role === 'applicant' ? ' Your application is under review.' : ''}
       </div>
     )
   }
@@ -189,52 +202,17 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
   return null
 }
 
-function AnnouncementCard({ a, org }: { a: Announcement; org: Org }) {
-  return (
-    <Card>
-      <div className="mb-2 flex items-center gap-2.5">
-        <OrgLogo org={org} size={22} radius={5} />
-        <div className="text-[12.5px] font-medium text-ink-2">{org.name}</div>
-        <span className="text-[11.5px] text-ink-3">·</span>
-        <span className="text-[11.5px] text-ink-3">{relTime(a.posted)}</span>
-        <span className="ml-auto flex gap-1.5">
-          {a.urgent && (
-            <Badge tone="red" icon="flag">
-              Urgent
-            </Badge>
-          )}
-          <VisibilityChip visibility={a.visibility} />
-        </span>
-      </div>
-      <div className="text-base font-medium text-ink-1">{a.title}</div>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{a.body}</p>
-      {a.reactions && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {Object.entries(a.reactions).map(([emoji, count]) => (
-            <span
-              key={emoji}
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-bg-2 px-2.5 py-1 text-xs text-ink-2"
-            >
-              <span>{emoji}</span>
-              <span className="tabular-nums">{count}</span>
-            </span>
-          ))}
-        </div>
-      )}
-    </Card>
-  )
-}
-
-function EventRow({ e }: { e: Event }) {
+function EventRow({ e }: { e: DBEvent }) {
+  const d = new Date(e.start_time)
   return (
     <Card padding={0} hoverable>
       <div className="grid grid-cols-[76px_1fr_auto] items-center">
         <div className="border-r border-border py-3.5 text-center">
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
-            {fmtDate(e.date).split(' ')[0]}
+            {fmtDate(d).split(' ')[0]}
           </div>
-          <div className="mt-1 font-serif text-[26px] font-medium leading-none text-ink-1">{e.date.getDate()}</div>
-          <div className="mt-1 text-[11px] text-ink-3">{fmtTime(e.date)}</div>
+          <div className="mt-1 font-serif text-[26px] font-medium leading-none text-ink-1">{d.getDate()}</div>
+          <div className="mt-1 text-[11px] text-ink-3">{fmtTime(d)}</div>
         </div>
         <div className="min-w-0 px-4 py-3.5">
           <div className="mb-1 flex items-center gap-2">
@@ -242,9 +220,9 @@ function EventRow({ e }: { e: Event }) {
             <VisibilityChip visibility={e.visibility} />
           </div>
           <div className="text-[15px] font-medium text-ink-1">{e.title}</div>
-          <div className="mt-1 text-[12.5px] text-ink-3">
-            {e.location} · {e.rsvps} going
-          </div>
+          {e.location && (
+            <div className="mt-1 text-[12.5px] text-ink-3">{e.location}</div>
+          )}
         </div>
         <div className="p-3.5">
           <Button variant="secondary" size="sm">
