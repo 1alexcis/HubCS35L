@@ -175,14 +175,10 @@ function EventComposer({
           <Field label="Who can see this?" hint="Permissions match your org's audience tiers.">
             <VisibilityPicker value={event.visibility} onChange={(v) => setEvent({ ...event, visibility: v })} />
           </Field>
-          <div className="mt-1 flex justify-between">
-            <Button variant="ghost">Save draft</Button>
-            <div className="flex gap-2">
-              <Button variant="secondary">Schedule</Button>
-              <Button variant="primary" icon="check">
-                Post event
-              </Button>
-            </div>
+          <div className="mt-1 flex justify-end">
+            <Button variant="primary" icon="check">
+              Post event
+            </Button>
           </div>
         </div>
       </Card>
