@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { useOrgs } from '@/lib/hooks/useOrgs'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { Card } from '@/components/ui/card'
@@ -12,8 +13,21 @@ import { Icon } from '@/components/ui/icon'
 export default function DiscoverPage() {
   const router = useRouter()
   const { orgs, loading } = useOrgs()
-  const { getRole } = useMemberships()
+  const { getRole, refetch } = useMemberships()
   const [q, setQ] = useState('')
+
+  async function handleFollow(e: React.MouseEvent, orgId: string, isFollower: boolean) {
+    e.stopPropagation()
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    if (isFollower) {
+      await supabase.from('memberships').delete().eq('user_id', user.id).eq('org_id', orgId)
+    } else {
+      await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
+    }
+    refetch()
+  }
 
   const filtered = useMemo(
     () => orgs.filter((o) => `${o.name} ${o.description} ${o.category}`.toLowerCase().includes(q.toLowerCase())),
@@ -74,7 +88,7 @@ export default function DiscoverPage() {
                     variant={isFollower ? 'soft' : 'secondary'}
                     size="sm"
                     icon={isFollower ? 'check' : 'plus'}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => handleFollow(e, o.id, isFollower)}
                   >
                     {isFollower ? 'Following' : 'Follow'}
                   </Button>

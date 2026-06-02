@@ -32,7 +32,7 @@ type DBOrg = {
 export default function OrgPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const router = useRouter()
-  const { getRole, loading: membLoading } = useMemberships()
+  const { getRole, loading: membLoading, refetch } = useMemberships()
   const [org, setOrg] = useState<DBOrg | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -55,6 +55,18 @@ export default function OrgPage() {
 
   if (loading || membLoading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
   if (!org) return <p className="text-ink-2">Org not found.</p>
+
+  async function handleFollow() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    if (role === 'follower') {
+      await supabase.from('memberships').delete().eq('user_id', user.id).eq('org_id', orgId)
+    } else {
+      await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
+    }
+    refetch()
+  }
 
   const role = getRole(orgId) ?? 'visitor'
   const isAdmin = role === 'admin'
@@ -104,11 +116,11 @@ export default function OrgPage() {
                 </Button>
               </>
             ) : role === 'follower' ? (
-              <Button variant="soft" icon="check">
+              <Button variant="soft" icon="check" onClick={handleFollow}>
                 Following
               </Button>
             ) : (
-              <Button variant="primary" icon="plus">
+              <Button variant="primary" icon="plus" onClick={handleFollow}>
                 Follow
               </Button>
             )}

@@ -18,6 +18,7 @@ export function useMemberships() {
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -36,11 +37,15 @@ export function useMemberships() {
       }
     }
     load()
-  }, [])
+  }, [tick])
 
   function getRole(orgId: string): 'admin' | 'follower' | null {
     return memberships.find(m => m.org_id === orgId)?.role ?? null
   }
 
-  return { memberships, loading, error, getRole }
+  function refetch() {
+    setTick(t => t + 1)
+  }
+
+  return { memberships, loading, error, getRole, refetch }
 }
