@@ -19,11 +19,16 @@ export default function DiscoverPage() {
 
   return (
     <div className="mx-auto max-w-[1240px]">
-      <div className="mb-6">
-        <h1 className="font-serif font-medium text-ink-1" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>
-          Discover orgs
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-3">{ORGS.length} organizations · pre-professional and academic</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="font-serif font-medium text-ink-1" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>
+            Discover orgs
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">{ORGS.length} organizations · pre-professional and academic</p>
+        </div>
+        <Button variant="primary" icon="plus" onClick={() => router.push('/orgs/new')}>
+          Create org
+        </Button>
       </div>
 
       <div className="mb-5 flex items-center gap-2.5 rounded-[10px] border border-border bg-bg-1 px-3.5 py-2.5">
