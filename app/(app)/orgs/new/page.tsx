@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ORGS, ME } from '@/lib/data'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/org-logo'
@@ -20,29 +19,14 @@ export default function NewOrgPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
-  const [tagline, setTagline] = useState('')
-  const [about, setAbout] = useState('')
+  const [description, setDescription] = useState('')
   const [color, setColor] = useState(COLORS[0])
+  const [notice, setNotice] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) return
-
-    const id = 'o' + (ORGS.length + 1)
-    ORGS.push({
-      id,
-      name: name.trim(),
-      short: initials(name),
-      tagline,
-      color,
-      logo: initials(name),
-      category: category || 'General',
-      about,
-      followers: 0,
-      founded: new Date().getFullYear(),
-    })
-    ME.roles[id] = 'admin' // creator becomes the admin
-    router.push(`/orgs/${id}`)
+    if (!name.trim() || !description.trim()) return
+    setNotice('Organization creation will be saved once Supabase writes are connected.')
   }
 
   return (
@@ -74,17 +58,12 @@ export default function NewOrgPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-ink-2">Tagline</label>
-            <input className={FIELD} value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="One line about your club." />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-ink-2">About</label>
+            <label className="text-xs font-medium text-ink-2">Description</label>
             <textarea
               rows={4}
               className={`${FIELD} resize-y leading-normal`}
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="What does your club do?"
             />
           </div>
@@ -108,10 +87,11 @@ export default function NewOrgPage() {
             <Button variant="ghost" onClick={() => router.push('/discover')}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" icon="check" disabled={!name.trim()}>
+            <Button variant="primary" type="submit" icon="check" disabled={!name.trim() || !description.trim()}>
               Create org
             </Button>
           </div>
+          {notice && <div className="text-[12.5px] text-ink-3">{notice}</div>}
         </form>
       </Card>
     </div>
