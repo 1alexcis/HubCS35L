@@ -43,7 +43,7 @@ export default function NewOrgPage() {
 
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
-      .insert({ name: name.trim(), description: description.trim(), category: category.trim() || null })
+      .insert({ name: name.trim(), description: description.trim() })
       .select('id')
       .single()
 
@@ -63,7 +63,7 @@ export default function NewOrgPage() {
       return
     }
 
-    router.push(`/orgs/${org.id}`)
+    window.location.href = `/orgs/${org.id}`
   }
 
   return (
