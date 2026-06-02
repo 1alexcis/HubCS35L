@@ -1,10 +1,6 @@
 'use client'
-import Link from 'next/link'
 import { Icon } from '@/components/ui/icon'
 import { Button } from '@/components/ui/button'
-import { ANNOUNCEMENTS } from '@/lib/data'
-
-const notifCount = ANNOUNCEMENTS.length
 
 export function TopBar() {
   return (
@@ -16,16 +12,6 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <Link href="/updates" className="relative">
-          <Button variant="ghost" size="sm" icon="bell">
-            Updates
-          </Button>
-          {notifCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-accent text-white text-[10px] font-semibold grid place-items-center px-1 leading-none">
-              {notifCount}
-            </span>
-          )}
-        </Link>
         <Button variant="primary" size="sm" icon="plus">
           Post
         </Button>

@@ -10,8 +10,6 @@ import { Icon, type IconName } from '@/components/ui/icon'
 const NAV = [
   { href: '/dashboard', icon: 'home' as IconName, label: 'Dashboard' },
   { href: '/discover', icon: 'compass' as IconName, label: 'Discover' },
-  { href: '/calendar', icon: 'calendar' as IconName, label: 'Calendar' },
-  { href: '/updates', icon: 'bell' as IconName, label: 'Updates' },
 ]
 
 export function Sidebar() {

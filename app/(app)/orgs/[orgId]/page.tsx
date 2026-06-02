@@ -59,12 +59,17 @@ export default function OrgPage() {
   const role = getRole(orgId) ?? 'visitor'
   const isAdmin = role === 'admin'
   const isFollowerPlus = role === 'admin' || role === 'follower'
+  const isGuest = !isAdmin && !isFollowerPlus
   const color = org.avatar_color ?? '#4F46E5'
 
   const visibleEvents = (org.events ?? []).filter(
     (e) => e.visibility === 'public' || isFollowerPlus
   )
   const hiddenEvents = (org.events ?? []).length - visibleEvents.length
+
+  const eventsForDisplay = visibleEvents
+    .slice()
+    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
 
   return (
     <div className="-m-6">
@@ -115,15 +120,17 @@ export default function OrgPage() {
         <div className="mt-6 grid grid-cols-[1fr_280px] gap-8">
           <div>
             <div className="mb-5 flex gap-1 border-b border-border">
-              <span className="border-b-2 border-accent px-3.5 py-2.5 text-[13.5px] font-medium text-ink-1">Feed</span>
+              <span className="border-b-2 border-accent px-3.5 py-2.5 text-[13.5px] font-medium text-ink-1">Events</span>
             </div>
-            {visibleEvents.length === 0 ? (
+            {eventsForDisplay.length === 0 ? (
               <Card>
                 <div className="px-4 py-8 text-center text-sm text-ink-3">Nothing posted yet.</div>
               </Card>
             ) : (
               <div className="flex flex-col gap-3">
-                {visibleEvents.map((e) => <EventRow key={e.id} e={e} />)}
+                {eventsForDisplay.map((event) => (
+                  <EventRow key={event.id} e={event} locked={isGuest && event.visibility === 'followers'} />
+                ))}
               </div>
             )}
           </div>
@@ -152,7 +159,11 @@ export default function OrgPage() {
 }
 
 function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number }) {
-  if (role === 'visitor') {
+  const isAdmin = role === 'admin'
+  const isFollower = role === 'follower' || isAdmin
+  const isGuest = !isAdmin && !isFollower
+
+  if (isGuest) {
     return (
       <Card
         style={{
@@ -163,8 +174,8 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
         <div className="flex items-center gap-3">
           <Icon name="eye" size={16} style={{ color: 'var(--accent)' }} />
           <div className="flex-1 text-[13.5px] text-ink-2">
-            You&apos;re viewing this org as a visitor. <strong className="text-ink-1">Follow</strong> to see
-            follower-only posts and apply to open recruitment.
+            You&apos;re viewing this org as a guest. <strong className="text-ink-1">Follow</strong> to see
+            follower-only posts.
           </div>
           <Button variant="primary" size="sm" icon="plus">
             Follow
@@ -173,16 +184,7 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
       </Card>
     )
   }
-  if (role === 'follower') {
-    return (
-      <div className="px-1 text-[12.5px] text-ink-3">
-        {hiddenEvents > 0
-          ? `${hiddenEvents} member-only event${hiddenEvents === 1 ? '' : 's'} hidden.`
-          : 'You see all public and follower posts.'}
-      </div>
-    )
-  }
-  if (role === 'admin') {
+  if (isAdmin) {
     return (
       <Card
         style={{
@@ -199,10 +201,19 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
       </Card>
     )
   }
+  if (isFollower) {
+    return (
+      <div className="px-1 text-[12.5px] text-ink-3">
+        {hiddenEvents > 0
+          ? `${hiddenEvents} unsupported event${hiddenEvents === 1 ? '' : 's'} hidden.`
+          : 'You see all public and follower events.'}
+      </div>
+    )
+  }
   return null
 }
 
-function EventRow({ e }: { e: DBEvent }) {
+function EventRow({ e, locked = false }: { e: DBEvent; locked?: boolean }) {
   const d = new Date(e.start_time)
   return (
     <Card padding={0} hoverable>
@@ -216,18 +227,26 @@ function EventRow({ e }: { e: DBEvent }) {
         </div>
         <div className="min-w-0 px-4 py-3.5">
           <div className="mb-1 flex items-center gap-2">
-            <Badge icon="calendar">Event</Badge>
+            <Badge icon={locked ? 'lock' : 'calendar'}>{locked ? 'Locked' : 'Event'}</Badge>
             <VisibilityChip visibility={e.visibility} />
           </div>
           <div className="text-[15px] font-medium text-ink-1">{e.title}</div>
-          {e.location && (
+          {locked ? (
+            <div className="mt-1 text-[12.5px] text-ink-3">Follow this org to view event details.</div>
+          ) : (
             <div className="mt-1 text-[12.5px] text-ink-3">{e.location}</div>
           )}
         </div>
         <div className="p-3.5">
-          <Button variant="secondary" size="sm">
-            RSVP
-          </Button>
+          {locked ? (
+            <Button variant="soft" size="sm" icon="lock">
+              Locked
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm">
+              RSVP
+            </Button>
+          )}
         </div>
       </div>
     </Card>

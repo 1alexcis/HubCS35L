@@ -32,13 +32,12 @@ async function seed() {
   else console.log('seeded test profile')
 
   const memberships = Object.entries(ME.roles)
-    .filter(([, role]) => role !== 'member' && role !== 'applicant')
     .map(([orgId, role]) => ({
       user_id: TEST_USER_ID,
       org_id: orgId,
-      role: role === 'admin' ? 'admin' : 'follower',
+      role,
     }))
-  const { error: membErr } = await supabase.from('memberships').upsert(memberships, { onConflict: 'id' })
+  const { error: membErr } = await supabase.from('memberships').upsert(memberships, { onConflict: 'user_id,org_id' })
   if (membErr) console.error('memberships:', membErr.message)
   else console.log(`seeded ${memberships.length} memberships`)
 
@@ -51,7 +50,7 @@ async function seed() {
       end_time: null,
       location: e.location,
       description: e.description,
-      visibility: e.visibility === 'members' ? 'followers' : e.visibility,
+      visibility: e.visibility,
     })),
     { onConflict: 'id' }
   )

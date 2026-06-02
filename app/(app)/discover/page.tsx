@@ -24,11 +24,16 @@ export default function DiscoverPage() {
 
   return (
     <div className="mx-auto max-w-[1240px]">
-      <div className="mb-6">
-        <h1 className="font-serif font-medium text-ink-1" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>
-          Discover orgs
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-3">{orgs.length} organizations · pre-professional and academic</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="font-serif font-medium text-ink-1" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>
+            Discover orgs
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">{orgs.length} organizations · pre-professional and academic</p>
+        </div>
+        <Button variant="primary" icon="plus" onClick={() => router.push('/orgs/new')}>
+          Create org
+        </Button>
       </div>
 
       <div className="mb-5 flex items-center gap-2.5 rounded-[10px] border border-border bg-bg-1 px-3.5 py-2.5">
@@ -47,7 +52,8 @@ export default function DiscoverPage() {
 
       <div className="grid grid-cols-3 gap-3.5">
         {filtered.map((o) => {
-          const following = getRole(o.id) != null
+          const role = getRole(o.id)
+          const isFollower = role != null
           const color = o.avatar_color ?? '#4F46E5'
           return (
             <Card key={o.id} padding={0} hoverable onClick={() => router.push(`/orgs/${o.id}`)}>
@@ -65,12 +71,12 @@ export default function DiscoverPage() {
                 <div className="mt-3.5 flex items-center justify-between">
                   <div />
                   <Button
-                    variant={following ? 'soft' : 'secondary'}
+                    variant={isFollower ? 'soft' : 'secondary'}
                     size="sm"
-                    icon={following ? 'check' : 'plus'}
+                    icon={isFollower ? 'check' : 'plus'}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {following ? 'Following' : 'Follow'}
+                    {isFollower ? 'Following' : 'Follow'}
                   </Button>
                 </div>
               </div>
