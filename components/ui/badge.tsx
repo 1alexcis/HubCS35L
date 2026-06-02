@@ -63,7 +63,7 @@ const VISIBILITY_MAP: Record<Visibility, { tone: BadgeTone; icon: IconName; labe
   followers: { tone: "blue", icon: "eye", label: "Followers" },
 };
 
-export function VisibilityChip({ visibility }: { visibility: Visibility }) {
-  const m = VISIBILITY_MAP[visibility];
+export function VisibilityChip({ visibility }: { visibility: Visibility | null | undefined }) {
+  const m = VISIBILITY_MAP[visibility as Visibility] ?? VISIBILITY_MAP.public;
   return <Badge tone={m.tone} icon={m.icon}>{m.label}</Badge>;
 }

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/org-logo'
@@ -21,12 +22,48 @@ export default function NewOrgPage() {
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
   const [color, setColor] = useState(COLORS[0])
-  const [notice, setNotice] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!name.trim() || !description.trim()) return
-    setNotice('Organization creation will be saved once Supabase writes are connected.')
+
+    setLoading(true)
+    setError('')
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setError('You need to be logged in to create an org.')
+      setLoading(false)
+      return
+    }
+
+    const { data: org, error: orgErr } = await supabase
+      .from('organizations')
+      .insert({ name: name.trim(), description: description.trim() })
+      .select('id')
+      .single()
+
+    if (orgErr || !org) {
+      setError(orgErr?.message ?? 'Something went wrong creating the org.')
+      setLoading(false)
+      return
+    }
+
+    const { error: membErr } = await supabase
+      .from('memberships')
+      .insert({ user_id: user.id, org_id: org.id, role: 'admin' })
+
+    if (membErr) {
+      setError(membErr.message)
+      setLoading(false)
+      return
+    }
+
+    window.location.href = `/orgs/${org.id}`
   }
 
   return (
@@ -87,11 +124,11 @@ export default function NewOrgPage() {
             <Button variant="ghost" onClick={() => router.push('/discover')}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" icon="check" disabled={!name.trim() || !description.trim()}>
-              Create org
+            <Button variant="primary" type="submit" icon="check" disabled={!name.trim() || !description.trim() || loading}>
+              {loading ? 'Creating...' : 'Create org'}
             </Button>
           </div>
-          {notice && <div className="text-[12.5px] text-ink-3">{notice}</div>}
+          {error && <div className="text-[12.5px]" style={{ color: '#a83a3a' }}>{error}</div>}
         </form>
       </Card>
     </div>
