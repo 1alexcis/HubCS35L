@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useDashboard, type DashEvent } from '@/lib/hooks/useDashboard'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
-import type { Role } from '@/lib/types'
+import { getMyRoles } from '@/lib/memberships'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -27,10 +27,8 @@ export default function DashboardPage() {
   const { upcomingEvents, recentEvents, memberships, loading } = useDashboard()
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
 
-  const roles = Object.fromEntries(memberships.map(m => [m.org_id, m.role])) as Partial<Record<string, Role>>
-  const adminOf = memberships.find(m => m.role === 'admin')?.org_id
   const visibleUpcoming = upcomingEvents.filter(e =>
-    canViewEvent(e.visibility, roleForOrg(roles, e.org_id, adminOf))
+    canViewEvent(e.visibility, roleForOrg(getMyRoles(), e.org_id))
   )
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
