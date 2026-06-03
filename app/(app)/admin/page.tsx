@@ -10,15 +10,6 @@ import { VisibilityChip } from '@/components/ui/badge'
 import { OrgLogo } from '@/components/ui/org-logo'
 import { Icon, type IconName } from '@/components/ui/icon'
 
-type Composer = 'event' | 'settings'
-type EventDraft = {
-  title: string
-  date: string
-  time: string
-  location: string
-  description: string
-  visibility: Visibility
-}
 type DBOrg = {
   id: string
   name: string
@@ -28,6 +19,16 @@ type DBOrg = {
 }
 type AdminMembership = {
   organizations: DBOrg | DBOrg[] | null
+}
+
+type Composer = 'event' | 'settings'
+type EventDraft = {
+  title: string
+  date: string
+  time: string
+  location: string
+  description: string
+  visibility: Visibility
 }
 
 const NAV: { id: Composer; icon: IconName; label: string }[] = [

@@ -1,6 +1,8 @@
 'use client'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { useDashboard, type DashEvent } from '@/lib/hooks/useDashboard'
+import { useRsvps } from '@/lib/hooks/useRsvps'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,8 +23,21 @@ function orgProps(org: DashEvent['organizations']) {
 export default function DashboardPage() {
   const router = useRouter()
   const { upcomingEvents, recentEvents, memberships, loading } = useDashboard()
+  const { hasRsvp, refetch: refetchRsvps } = useRsvps()
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
+
+  async function handleRsvp(eventId: string) {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    if (hasRsvp(eventId)) {
+      await supabase.from('rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
+    } else {
+      await supabase.from('rsvps').insert({ user_id: user.id, event_id: eventId })
+    }
+    refetchRsvps()
+  }
 
   return (
     <div className="mx-auto max-w-[1240px]">
@@ -75,8 +90,13 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div className="grid place-items-center p-3.5">
-                        <Button variant="secondary" size="sm" onClick={(ev) => ev.stopPropagation()}>
-                          RSVP
+                        <Button
+                          variant={hasRsvp(e.id) ? 'soft' : 'secondary'}
+                          size="sm"
+                          icon={hasRsvp(e.id) ? 'check' : undefined}
+                          onClick={(ev) => { ev.stopPropagation(); handleRsvp(e.id) }}
+                        >
+                          {hasRsvp(e.id) ? 'Going' : 'RSVP'}
                         </Button>
                       </div>
                     </div>
