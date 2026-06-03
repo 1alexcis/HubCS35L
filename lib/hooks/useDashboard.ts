@@ -46,13 +46,13 @@ export function useDashboard() {
         const [upcomingRes, recentRes, membRes] = await Promise.all([
           supabase
             .from('events')
-            .select('*, organizations(name, avatar_color)')
+            .select('*, organizations(name)')
             .gte('start_time', new Date().toISOString())
             .order('start_time')
             .limit(10),
           supabase
             .from('events')
-            .select('*, organizations(name, avatar_color)')
+            .select('*, organizations(name)')
             .order('created_at', { ascending: false })
             .limit(10),
           supabase
