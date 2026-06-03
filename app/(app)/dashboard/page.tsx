@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useDashboard, type DashEvent } from '@/lib/hooks/useDashboard'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
-import { getMyRoles } from '@/lib/memberships'
+import { getMyRolesMock } from '@/lib/memberships'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
 
   const visibleUpcoming = upcomingEvents.filter(e =>
-    canViewEvent(e.visibility, roleForOrg(getMyRoles(), e.org_id))
+    canViewEvent(e.visibility, roleForOrg(getMyRolesMock(), e.org_id))
   )
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOrgs } from '@/lib/hooks/useOrgs'
 import { useMemberships } from '@/lib/hooks/useMemberships'
-import { getMyRoles } from '@/lib/memberships'
+import { getMyRolesMock } from '@/lib/memberships'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/org-logo'
@@ -62,7 +62,7 @@ export default function DiscoverPage() {
 
       <div className="grid grid-cols-3 gap-3.5">
         {filtered.map((o) => {
-          const role = getMyRoles()[o.id]
+          const role = getMyRolesMock()[o.id]
           const isFollower = role != null
           const color = o.avatar_color ?? '#4F46E5'
           return (

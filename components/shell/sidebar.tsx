@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@/lib/hooks/useUser'
 import { useMemberships } from '@/lib/hooks/useMemberships'
-import { getMyRoles } from '@/lib/memberships'
+import { getMyRolesMock } from '@/lib/memberships'
 import { Avatar } from '@/components/ui/avatar'
 import { OrgLogo } from '@/components/ui/org-logo'
 import { Icon, type IconName } from '@/components/ui/icon'
@@ -69,7 +69,7 @@ export function Sidebar() {
                     radius={4}
                   />
                   <span className="truncate">{org.name}</span>
-                  {getMyRoles()[m.org_id] === 'admin' && (
+                  {getMyRolesMock()[m.org_id] === 'admin' && (
                     <span className="ml-auto text-[10px] text-ink-3">Admin</span>
                   )}
                 </Link>

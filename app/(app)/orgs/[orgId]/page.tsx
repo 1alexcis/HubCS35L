@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
-import { getMyRoles } from '@/lib/memberships'
+import { getMyRolesMock } from '@/lib/memberships'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -84,7 +84,7 @@ export default function OrgPage() {
     refetchRsvps()
   }
 
-  const viewerRole = roleForOrg(getMyRoles(), orgId)
+  const viewerRole = roleForOrg(getMyRolesMock(), orgId)
   const isAdmin = viewerRole === 'admin'
   const isFollower = viewerRole === 'admin' || viewerRole === 'follower'
   const color = org.avatar_color ?? '#4F46E5'
