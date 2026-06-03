@@ -1,6 +1,10 @@
 'use client'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 import { useDashboard, type DashEvent } from '@/lib/hooks/useDashboard'
+import { useRsvps } from '@/lib/hooks/useRsvps'
+import { roleForOrg, canViewEvent } from '@/lib/visibility'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,8 +25,27 @@ function orgProps(org: DashEvent['organizations']) {
 export default function DashboardPage() {
   const router = useRouter()
   const { upcomingEvents, recentEvents, memberships, loading } = useDashboard()
+  const { hasRsvp, refetch: refetchRsvps } = useRsvps()
+
+  const roleMap = Object.fromEntries(memberships.map(m => [m.org_id, m.role]))
+  const visibleUpcoming = upcomingEvents.filter(e =>
+    canViewEvent(e.visibility, roleForOrg(roleMap, e.org_id))
+  )
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
+
+  async function handleRsvp(eventId: string) {
+    const supabase = createClient()
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
+    if (!userId) return
+    if (hasRsvp(eventId)) {
+      await supabase.from('rsvps').delete().eq('user_id', userId).eq('event_id', eventId)
+    } else {
+      await supabase.from('rsvps').insert({ user_id: userId, event_id: eventId })
+    }
+    refetchRsvps()
+  }
 
   return (
     <div className="mx-auto max-w-[1240px]">
@@ -35,7 +58,7 @@ export default function DashboardPage() {
           Good afternoon.
         </h1>
         <div className="mt-1.5 text-sm text-ink-3">
-          {upcomingEvents.length} upcoming events · {memberships.length} orgs followed
+          {visibleUpcoming.length} upcoming events · {memberships.length} orgs followed
         </div>
       </div>
 
@@ -48,7 +71,7 @@ export default function DashboardPage() {
               subtitle="Events from your orgs and RSVPs"
             />
             <div className="flex flex-col gap-2.5">
-              {upcomingEvents.map((e) => {
+              {visibleUpcoming.map((e) => {
                 const d = new Date(e.start_time)
                 return (
                   <Card key={e.id} padding={0} hoverable onClick={() => router.push(`/orgs/${e.org_id}`)}>
@@ -75,15 +98,20 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div className="grid place-items-center p-3.5">
-                        <Button variant="secondary" size="sm" onClick={(ev) => ev.stopPropagation()}>
-                          RSVP
+                        <Button
+                          variant={hasRsvp(e.id) ? 'soft' : 'secondary'}
+                          size="sm"
+                          icon={hasRsvp(e.id) ? 'check' : undefined}
+                          onClick={(ev) => { ev.stopPropagation(); handleRsvp(e.id) }}
+                        >
+                          {hasRsvp(e.id) ? 'Going' : 'RSVP'}
                         </Button>
                       </div>
                     </div>
                   </Card>
                 )
               })}
-              {upcomingEvents.length === 0 && (
+              {visibleUpcoming.length === 0 && (
                 <Card>
                   <div className="py-6 text-center text-sm text-ink-3">No upcoming events.</div>
                 </Card>

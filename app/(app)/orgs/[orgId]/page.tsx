@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getCurrentUserId } from '@/lib/supabase/current-user'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
+import { roleForOrg, canViewEvent } from '@/lib/visibility'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,10 +35,11 @@ type DBOrg = {
 export default function OrgPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const router = useRouter()
-  const { getRole, loading: membLoading, refetch } = useMemberships()
+  const { memberships, loading: membLoading, refetch } = useMemberships()
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
   const [org, setOrg] = useState<DBOrg | null>(null)
   const [loading, setLoading] = useState(true)
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const supabase = createClient()
@@ -49,6 +51,18 @@ export default function OrgPage() {
           .eq('id', orgId)
           .single()
         setOrg(data as DBOrg)
+        const eventIds = ((data as DBOrg)?.events ?? []).map(e => e.id)
+        if (eventIds.length > 0) {
+          const { data: rsvpRows } = await supabase
+            .from('rsvps')
+            .select('event_id')
+            .in('event_id', eventIds)
+          const counts: Record<string, number> = {}
+          for (const row of rsvpRows ?? []) {
+            counts[row.event_id] = (counts[row.event_id] ?? 0) + 1
+          }
+          setRsvpCounts(counts)
+        }
       } finally {
         setLoading(false)
       }
@@ -64,11 +78,13 @@ export default function OrgPage() {
     // Use the E2E test user when configured; otherwise use normal Supabase auth.
     const userId = await getCurrentUserId(supabase)
     if (!userId) return
-    if (role === 'follower') {
+  
+    if (viewerRole === 'follower') {
       await supabase.from('memberships').delete().eq('user_id', userId).eq('org_id', orgId)
     } else {
       await supabase.from('memberships').insert({ user_id: userId, org_id: orgId, role: 'follower' })
     }
+  
     refetch()
   }
 
@@ -85,18 +101,13 @@ export default function OrgPage() {
     refetchRsvps()
   }
 
-  const role = getRole(orgId) ?? 'visitor'
-  const isAdmin = role === 'admin'
-  const isFollowerPlus = role === 'admin' || role === 'follower'
-  const isGuest = !isAdmin && !isFollowerPlus
+  const roleMap = Object.fromEntries(memberships.map(m => [m.org_id, m.role]))
+  const viewerRole = roleForOrg(roleMap, orgId)
+  const isAdmin = viewerRole === 'admin'
+  const isFollower = viewerRole === 'admin' || viewerRole === 'follower'
   const color = org.avatar_color ?? '#4F46E5'
 
-  const visibleEvents = (org.events ?? []).filter(
-    (e) => e.visibility === 'public' || isFollowerPlus
-  )
-  const hiddenEvents = (org.events ?? []).length - visibleEvents.length
-
-  const eventsForDisplay = visibleEvents
+  const eventsForDisplay = (org.events ?? [])
     .slice()
     .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
 
@@ -132,7 +143,7 @@ export default function OrgPage() {
                   Post event
                 </Button>
               </>
-            ) : role === 'follower' ? (
+            ) : viewerRole === 'follower' ? (
               <Button variant="soft" icon="check" onClick={handleFollow}>
                 Following
               </Button>
@@ -144,7 +155,7 @@ export default function OrgPage() {
           </div>
         </div>
 
-        <RoleBanner role={role} hiddenEvents={hiddenEvents} />
+        <RoleBanner role={viewerRole ?? 'guest'} hiddenEvents={0} />
 
         <div className="mt-6 grid grid-cols-[1fr_280px] gap-8">
           <div>
@@ -161,9 +172,10 @@ export default function OrgPage() {
                   <EventRow
                     key={event.id}
                     e={event}
-                    locked={isGuest && event.visibility === 'followers'}
+                    locked={!canViewEvent(event.visibility, viewerRole)}
                     rsvped={hasRsvp(event.id)}
                     onRsvp={() => handleRsvp(event.id)}
+                    rsvpCount={isFollower ? (rsvpCounts[event.id] ?? 0) : undefined}
                   />
                 ))}
               </div>
@@ -182,7 +194,7 @@ export default function OrgPage() {
                   <Icon name="globe" size={13} /> Public posts visible to everyone
                 </div>
                 <div className="flex items-center gap-2">
-                  <Icon name="eye" size={13} /> Follower posts visible to {isFollowerPlus ? 'you' : 'followers only'}
+                  <Icon name="eye" size={13} /> Follower posts visible to {isFollower ? 'you' : 'followers only'}
                 </div>
               </div>
             </Card>
@@ -250,11 +262,13 @@ function EventRow({
   locked = false,
   rsvped = false,
   onRsvp,
+  rsvpCount,
 }: {
   e: DBEvent
   locked?: boolean
   rsvped?: boolean
   onRsvp?: () => void
+  rsvpCount?: number
 }) {
   const d = new Date(e.start_time)
   return (
@@ -276,7 +290,12 @@ function EventRow({
           {locked ? (
             <div className="mt-1 text-[12.5px] text-ink-3">Follow this org to view event details.</div>
           ) : (
-            <div className="mt-1 text-[12.5px] text-ink-3">{e.location}</div>
+            <div className="mt-1 text-[12.5px] text-ink-3">
+              {e.location}
+              {rsvpCount !== undefined && (
+                <span className="ml-2 text-ink-3">· {rsvpCount} going</span>
+              )}
+            </div>
           )}
         </div>
         <div className="p-3.5">

@@ -1,6 +1,6 @@
 import type { Org, Event, CurrentUser } from './types'
 
-export const TODAY = new Date(2026, 4, 6)
+export const TODAY = new Date()
 
 export function day(offset: number, hour = 18, min = 0): Date {
   const d = new Date(TODAY)
@@ -10,16 +10,16 @@ export function day(offset: number, hour = 18, min = 0): Date {
 }
 
 export const ORGS: Org[] = [
-  { id: 'o1', name: 'ACM at UCLA', short: 'ACM', tagline: 'The largest CS org on campus.', color: '#3b3a8a', logo: 'AC', category: 'Technology', followers: 1840, about: 'ACM runs hack nights, an interview prep track, and an industry speaker series.', founded: 2003 },
-  { id: 'o2', name: 'Bruin Entrepreneurs', short: 'BE', tagline: 'Connect founders and builders.', color: '#a04a1f', logo: 'BE', category: 'Business', followers: 351, about: 'BE supports UCLA students starting companies through workshops and mentorship.', founded: 2014 },
-  { id: 'o3', name: 'UCLA Film Society', short: 'FS', tagline: 'Weekly screenings and industry talks.', color: '#7a4ad6', logo: 'FS', category: 'Arts', followers: 412, about: 'Film Society hosts weekly screenings, director Q&As, and a student-run film festival each spring.', founded: 2009 },
-  { id: 'o4', name: 'Bruin Consulting', short: 'BC', tagline: 'Pro bono consulting for LA non-profits.', color: '#1f4ea8', logo: 'BC', category: 'Business', followers: 612, about: 'BC pairs undergraduate teams with mission-driven non-profits in LA.', founded: 2011 },
-  { id: 'o5', name: 'Pre-Med Society', short: 'PMS', tagline: 'MCAT, mentorship, and clinical exposure.', color: '#a83a3a', logo: 'PM', category: 'Pre-Professional', followers: 1102, about: 'PMS runs MCAT cohorts, physician panels, and connects pre-meds with clinical opportunities.', founded: 2001 },
-  { id: 'o6', name: 'Kerckhoff Coffee House', short: 'KCH', tagline: 'Campus coffeehouse and open mic venue.', color: '#6b5a2c', logo: 'KC', category: 'Arts', followers: 274, about: 'KCH is a student-run coffeehouse hosting weekly open mics and acoustic shows.', founded: 1993 },
-  { id: 'o7', name: 'Ballroom Dance at UCLA', short: 'BDC', tagline: 'Competitive and social ballroom dancing.', color: '#8a3a6f', logo: 'BD', category: 'Sports', followers: 540, about: 'Open to all skill levels. We compete intercollegiately and host two socials a quarter.', founded: 2007 },
-  { id: 'o8', name: 'Asian Pacific Coalition', short: 'APC', tagline: 'Advocacy and community for APA students.', color: '#0e7d8a', logo: 'AP', category: 'Cultural', followers: 902, about: 'APC is a coalition of Asian Pacific student organizations focused on advocacy and community.', founded: 1991 },
-  { id: 'o9', name: 'Bruin Democrats', short: 'BD', tagline: 'Political organizing and civic engagement.', color: '#2c5d8a', logo: 'DM', category: 'Political', followers: 488, about: 'Bruin Dems organizes for local and national candidates and runs voter registration drives.', founded: 2008 },
-  { id: 'o10', name: 'Sunset Hiking Club', short: 'SHC', tagline: 'Weekend hikes around LA.', color: '#0f6f5c', logo: 'SH', category: 'Recreation', followers: 1004, about: 'Weekend hikes around LA. All levels welcome — we always have a beginner-friendly group.', founded: 2019 },
+  { id: 'o1', name: 'ACM at UCLA', short: 'ACM', tagline: 'The largest CS org on campus', color: '#3b3a8a', logo: 'AC', category: 'Technology', followers: 1840, about: 'ACM runs hack nights, an interview prep track, and an industry speaker series.', founded: 2003 },
+  { id: 'o2', name: 'Bruin Entrepreneurs', short: 'BE', tagline: 'Connect founders and builders', color: '#a04a1f', logo: 'BE', category: 'Business', followers: 351, about: 'BE supports UCLA students starting companies through workshops and mentorship.', founded: 2014 },
+  { id: 'o3', name: 'UConsulting', short: 'UC', tagline: 'Future consultants, entrepreneurs, and business leaders', color: '#7a4ad6', logo: 'UC', category: 'Business', followers: 412, about: 'UC ', founded: 2009 },
+  { id: 'o4', name: 'Bruin Consulting', short: 'BC', tagline: 'Management consulting at Fortune 500 companies', color: '#1f4ea8', logo: 'BC', category: 'Business', followers: 612, about: 'BC pairs undergraduate teams with mission-driven non-profits in LA.', founded: 2011 },
+  { id: 'o5', name: 'Bruin Strategy Network', short: 'BSN', tagline: 'Management and Healthcare Consulting', color: '#a83a3a', logo: 'BS', category: 'Business', followers: 1102, about: 'BSN', founded: 2001 },
+  { id: 'o6', name: 'Bruin AI', short: 'BA', tagline: 'Building AI solutions for startups and Fortune-500 companies', color: '#6b5a2c', logo: 'BA', category: 'Technology', followers: 274, about: 'Bruin AI', founded: 1993 },
+  { id: 'o7', name: 'Bruin Beans', short: 'BB', tagline: 'Working in nephrology towards kidney disease', color: '#8a3a6f', logo: 'BB', category: 'Medical', followers: 540, about: 'Bruin AI', founded: 2007 },
+  { id: 'o8', name: 'Bruin Stroke Force', short: 'BSF', tagline: 'Spread awareness of stroke in neurology', color: '#0e7d8a', logo: 'BS', category: 'Medical', followers: 902, about: 'Bruin Stroke Force', founded: 1991 },
+  { id: 'o9', name: 'VEST', short: 'V', tagline: 'Cultivating a startup ecosystem at UCLA', color: '#2c5d8a', logo: 'V', category: 'Technology', followers: 488, about: 'VEST', founded: 2008 },
+  { id: 'o10', name: 'Product Space', short: 'PS', tagline: 'UCLA\'s premier product organization', color: '#0f6f5c', logo: 'PS', category: 'Technology', followers: 1004, about: 'Product Space', founded: 2019 },
 ]
 
 export const EVENTS: Event[] = [
