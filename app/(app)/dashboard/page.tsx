@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboard, type DashEvent } from '@/lib/hooks/useDashboard'
 import { useRsvps } from '@/lib/hooks/useRsvps'
+import { roleForOrg, canViewEvent } from '@/lib/visibility'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,11 @@ export default function DashboardPage() {
   const router = useRouter()
   const { upcomingEvents, recentEvents, memberships, loading } = useDashboard()
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
+
+  const roleMap = Object.fromEntries(memberships.map(m => [m.org_id, m.role]))
+  const visibleUpcoming = upcomingEvents.filter(e =>
+    canViewEvent(e.visibility, roleForOrg(roleMap, e.org_id))
+  )
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
 
@@ -50,7 +56,7 @@ export default function DashboardPage() {
           Good afternoon.
         </h1>
         <div className="mt-1.5 text-sm text-ink-3">
-          {upcomingEvents.length} upcoming events · {memberships.length} orgs followed
+          {visibleUpcoming.length} upcoming events · {memberships.length} orgs followed
         </div>
       </div>
 
@@ -63,7 +69,7 @@ export default function DashboardPage() {
               subtitle="Events from your orgs and RSVPs"
             />
             <div className="flex flex-col gap-2.5">
-              {upcomingEvents.map((e) => {
+              {visibleUpcoming.map((e) => {
                 const d = new Date(e.start_time)
                 return (
                   <Card key={e.id} padding={0} hoverable onClick={() => router.push(`/orgs/${e.org_id}`)}>
@@ -103,7 +109,7 @@ export default function DashboardPage() {
                   </Card>
                 )
               })}
-              {upcomingEvents.length === 0 && (
+              {visibleUpcoming.length === 0 && (
                 <Card>
                   <div className="py-6 text-center text-sm text-ink-3">No upcoming events.</div>
                 </Card>
