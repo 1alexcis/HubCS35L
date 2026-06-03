@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/org-logo'
 
 const FIELD = 'w-full rounded-lg border border-border bg-bg-1 px-3 py-2.5 text-[13.5px] text-ink-1 outline-none'
-const COLORS = ['#1f4ea8', '#a04a1f', '#7a4ad6', '#0f6f5c', '#a83a3a', '#6b5a2c']
+const PREVIEW_COLOR = '#1f4ea8'
 
 // "Bruin Robotics" -> "BR", "ACM" -> "AC"
 function initials(name: string) {
@@ -19,9 +19,7 @@ function initials(name: string) {
 export default function NewOrgPage() {
   const router = useRouter()
   const [name, setName] = useState('')
-  const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
-  const [color, setColor] = useState(COLORS[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -80,18 +78,13 @@ export default function NewOrgPage() {
       <Card>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <OrgLogo org={{ color, logo: initials(name) || '?' }} size={44} radius={10} />
+            <OrgLogo org={{ color: PREVIEW_COLOR, logo: initials(name) || '?' }} size={44} radius={10} />
             <div className="text-[13px] text-ink-3">Logo preview</div>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-ink-2">Name</label>
             <input className={FIELD} value={name} onChange={(e) => setName(e.target.value)} placeholder="Bruin Robotics" />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-ink-2">Category</label>
-            <input className={FIELD} value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Technology" />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -103,21 +96,6 @@ export default function NewOrgPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What does your club do?"
             />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-ink-2">Color</label>
-            <div className="flex gap-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className="h-7 w-7 rounded-full"
-                  style={{ background: c, outline: color === c ? '2px solid var(--ink-1)' : 'none', outlineOffset: 2 }}
-                />
-              ))}
-            </div>
           </div>
 
           <div className="mt-1 flex justify-end gap-2">
