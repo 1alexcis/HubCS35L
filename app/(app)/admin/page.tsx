@@ -36,6 +36,7 @@ const NAV: { id: Composer; icon: IconName; label: string }[] = [
 ]
 
 const FIELD = 'w-full rounded-lg border border-border bg-bg-1 px-3 py-2.5 text-[13.5px] text-ink-1 outline-none'
+const TODAY = new Date().toISOString().slice(0, 10)
 
 export default function AdminPage() {
   const router = useRouter()
@@ -48,7 +49,7 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [event, setEvent] = useState<EventDraft>({
     title: 'Industry Speaker: Engineering at Anthropic',
-    date: '2026-05-17',
+    date: TODAY,
     time: '19:00',
     location: 'Boelter 3400',
     description: "An engineering manager from Anthropic on what it's like to build at the frontier. Q&A, then food.",
@@ -86,14 +87,23 @@ export default function AdminPage() {
 
   async function handlePostEvent(e: React.FormEvent) {
     e.preventDefault()
-    if (!org) return
+    if (!org) {
+      setError('An admin org is required to post an event.')
+      return
+    }
+
+    const title = event.title.trim()
+    if (!title || !event.date || !event.time || !event.visibility) {
+      setError('Title, date, time, and visibility are required.')
+      return
+    }
 
     setPosting(true)
     setError('')
     const supabase = createClient()
     const { error: err } = await supabase.from('events').insert({
       org_id: org.id,
-      title: event.title.trim(),
+      title,
       start_time: new Date(`${event.date}T${event.time}`).toISOString(),
       location: event.location.trim(),
       description: event.description.trim(),
@@ -237,18 +247,18 @@ function EventComposer({
             </h2>
           </div>
           <Field label="Title">
-            <input className={FIELD} value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} />
+            <input required className={FIELD} value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date">
-              <input type="date" className={FIELD} value={event.date} onChange={(e) => setEvent({ ...event, date: e.target.value })} />
+              <input required type="date" className={FIELD} value={event.date} onChange={(e) => setEvent({ ...event, date: e.target.value })} />
             </Field>
             <Field label="Time">
-              <input type="time" className={FIELD} value={event.time} onChange={(e) => setEvent({ ...event, time: e.target.value })} />
+              <input required type="time" className={FIELD} value={event.time} onChange={(e) => setEvent({ ...event, time: e.target.value })} />
             </Field>
           </div>
           <Field label="Location">
-            <input className={FIELD} value={event.location} onChange={(e) => setEvent({ ...event, location: e.target.value })} />
+            <input required className={FIELD} value={event.location} onChange={(e) => setEvent({ ...event, location: e.target.value })} />
           </Field>
           <Field label="Description">
             <textarea
