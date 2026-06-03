@@ -88,12 +88,17 @@ export default function OrgPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    if (hasRsvp(eventId)) {
+    const removing = hasRsvp(eventId)
+    if (removing) {
       await supabase.from('rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
     } else {
       await supabase.from('rsvps').insert({ user_id: user.id, event_id: eventId })
     }
     refetchRsvps()
+    setRsvpCounts(prev => ({
+      ...prev,
+      [eventId]: Math.max(0, (prev[eventId] ?? 0) + (removing ? -1 : 1)),
+    }))
   }
 
   const roleMap = Object.fromEntries(memberships.map(m => [m.org_id, m.role]))
