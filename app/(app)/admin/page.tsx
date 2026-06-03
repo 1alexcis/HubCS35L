@@ -48,11 +48,11 @@ export default function AdminPage() {
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState('')
   const [event, setEvent] = useState<EventDraft>({
-    title: 'Industry Speaker: Engineering at Anthropic',
+    title: '',
     date: TODAY,
     time: '19:00',
-    location: 'Boelter 3400',
-    description: "An engineering manager from Anthropic on what it's like to build at the frontier. Q&A, then food.",
+    location: '',
+    description: '',
     visibility: 'public',
   })
 
