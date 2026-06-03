@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
-import { getMyRolesMock } from '@/lib/memberships'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,7 +34,7 @@ type DBOrg = {
 export default function OrgPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const router = useRouter()
-  const { loading: membLoading, refetch } = useMemberships()
+  const { memberships, loading: membLoading, refetch } = useMemberships()
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
   const [org, setOrg] = useState<DBOrg | null>(null)
   const [loading, setLoading] = useState(true)
@@ -84,7 +83,8 @@ export default function OrgPage() {
     refetchRsvps()
   }
 
-  const viewerRole = roleForOrg(getMyRolesMock(), orgId)
+  const roleMap = Object.fromEntries(memberships.map(m => [m.org_id, m.role]))
+  const viewerRole = roleForOrg(roleMap, orgId)
   const isAdmin = viewerRole === 'admin'
   const isFollower = viewerRole === 'admin' || viewerRole === 'follower'
   const color = org.avatar_color ?? '#4F46E5'

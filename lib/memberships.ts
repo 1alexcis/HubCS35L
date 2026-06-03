@@ -1,19 +1,15 @@
 import type { Role } from './types'
-import { ME } from './data'
+import type { RoleMap } from './memberships-client'
 
-export type RoleMap = Partial<Record<string, Role>>
-
-// Mock fallback — used by client components not yet migrated to the DB seam.
-export function getMyRolesMock(): RoleMap {
-  return { ...ME.roles, [ME.adminOf]: 'admin' }
-}
+export type { RoleMap } from './memberships-client'
+export { getMyRolesMock } from './memberships-client'
 
 /**
  * Returns the signed-in user's org roles from the real memberships table.
- * Server-only: call from Server Components or Route Handlers only.
+ * Server only: call from Server Components or Route Handlers only.
  *
  * Note: event visibility is ALSO enforced server-side by RLS in
- * supabase/migrations/002_rls.sql — this client map is for UI convenience only.
+ * supabase/migrations/002_rls.sql,  this client map is for UI convenience only.
  */
 export async function getMyRolesFromDb(): Promise<RoleMap> {
   // Dynamic import keeps next/headers out of the client bundle.
