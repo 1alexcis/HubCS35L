@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
-import { ORGS, ME } from '@/lib/data'
-import type { Org, Visibility } from '@/lib/types'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import type { Visibility } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { VisibilityChip } from '@/components/ui/badge'
@@ -19,6 +19,16 @@ type EventDraft = {
   description: string
   visibility: Visibility
 }
+type DBOrg = {
+  id: string
+  name: string
+  description: string | null
+  category: string | null
+  avatar_color: string | null
+}
+type AdminMembership = {
+  organizations: DBOrg | DBOrg[] | null
+}
 
 const NAV: { id: Composer; icon: IconName; label: string }[] = [
   { id: 'event', icon: 'calendar', label: 'Post event' },
@@ -26,19 +36,91 @@ const NAV: { id: Composer; icon: IconName; label: string }[] = [
 ]
 
 const FIELD = 'w-full rounded-lg border border-border bg-bg-1 px-3 py-2.5 text-[13.5px] text-ink-1 outline-none'
+const TODAY = new Date().toISOString().slice(0, 10)
 
 export default function AdminPage() {
   const router = useRouter()
-  const org = ORGS.find((o) => o.id === ME.adminOf)!
+  const searchParams = useSearchParams()
+  const requestedOrgId = searchParams.get('orgId')
   const [composer, setComposer] = useState<Composer>('event')
+  const [org, setOrg] = useState<DBOrg | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [posting, setPosting] = useState(false)
+  const [error, setError] = useState('')
   const [event, setEvent] = useState<EventDraft>({
     title: 'Industry Speaker: Engineering at Anthropic',
-    date: '2026-05-17',
+    date: TODAY,
     time: '19:00',
     location: 'Boelter 3400',
     description: "An engineering manager from Anthropic on what it's like to build at the frontier. Q&A, then food.",
     visibility: 'public',
   })
+
+  useEffect(() => {
+    const supabase = createClient()
+    async function loadAdminOrg() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data, error: err } = await supabase
+          .from('memberships')
+          .select('organizations(*)')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+
+        if (err) {
+          setError(err.message)
+          return
+        }
+
+        const adminOrgs = ((data ?? []) as AdminMembership[])
+          .map((m) => Array.isArray(m.organizations) ? m.organizations[0] : m.organizations)
+          .filter((o): o is DBOrg => Boolean(o))
+        setOrg(adminOrgs.find((o) => o.id === requestedOrgId) ?? adminOrgs[0] ?? null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAdminOrg()
+  }, [requestedOrgId])
+
+  async function handlePostEvent(e: React.FormEvent) {
+    e.preventDefault()
+    if (!org) {
+      setError('An admin org is required to post an event.')
+      return
+    }
+
+    const title = event.title.trim()
+    if (!title || !event.date || !event.time || !event.visibility) {
+      setError('Title, date, time, and visibility are required.')
+      return
+    }
+
+    setPosting(true)
+    setError('')
+    const supabase = createClient()
+    const { error: err } = await supabase.from('events').insert({
+      org_id: org.id,
+      title,
+      start_time: new Date(`${event.date}T${event.time}`).toISOString(),
+      location: event.location.trim(),
+      description: event.description.trim(),
+      visibility: event.visibility,
+    })
+
+    if (err) {
+      setError(err.message)
+      setPosting(false)
+      return
+    }
+
+    router.push(`/orgs/${org.id}`)
+  }
+
+  if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
+  if (!org) return <div className="p-8 text-sm text-ink-3">No admin org found.</div>
 
   return (
     <div className="mx-auto max-w-[1240px]">
@@ -81,7 +163,16 @@ export default function AdminPage() {
         </aside>
 
         <div>
-          {composer === 'event' && <EventComposer org={org} event={event} setEvent={setEvent} />}
+          {error && <div className="mb-3 text-sm" style={{ color: '#a83a3a' }}>{error}</div>}
+          {composer === 'event' && (
+            <EventComposer
+              org={org}
+              event={event}
+              setEvent={setEvent}
+              posting={posting}
+              onSubmit={handlePostEvent}
+            />
+          )}
           {composer === 'settings' && <Placeholder text="Org settings — coming soon." />}
         </div>
       </div>
@@ -112,6 +203,7 @@ function VisibilityPicker({ value, onChange }: { value: Visibility; onChange: (v
         return (
           <button
             key={o.id}
+            type="button"
             onClick={() => onChange(o.id)}
             className="rounded-lg px-3 py-2.5 text-left"
             style={{
@@ -135,15 +227,19 @@ function EventComposer({
   org,
   event,
   setEvent,
+  posting,
+  onSubmit,
 }: {
-  org: Org
+  org: DBOrg
   event: EventDraft
   setEvent: (e: EventDraft) => void
+  posting: boolean
+  onSubmit: (e: React.FormEvent) => void
 }) {
   return (
     <div className="grid grid-cols-[1.2fr_1fr] items-start gap-5">
       <Card>
-        <div className="flex flex-col gap-4">
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">New event</div>
             <h2 className="mt-1 font-serif font-medium text-ink-1" style={{ fontSize: 22, letterSpacing: '-0.015em' }}>
@@ -151,18 +247,18 @@ function EventComposer({
             </h2>
           </div>
           <Field label="Title">
-            <input className={FIELD} value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} />
+            <input required className={FIELD} value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date">
-              <input type="date" className={FIELD} value={event.date} onChange={(e) => setEvent({ ...event, date: e.target.value })} />
+              <input required type="date" className={FIELD} value={event.date} onChange={(e) => setEvent({ ...event, date: e.target.value })} />
             </Field>
             <Field label="Time">
-              <input type="time" className={FIELD} value={event.time} onChange={(e) => setEvent({ ...event, time: e.target.value })} />
+              <input required type="time" className={FIELD} value={event.time} onChange={(e) => setEvent({ ...event, time: e.target.value })} />
             </Field>
           </div>
           <Field label="Location">
-            <input className={FIELD} value={event.location} onChange={(e) => setEvent({ ...event, location: e.target.value })} />
+            <input required className={FIELD} value={event.location} onChange={(e) => setEvent({ ...event, location: e.target.value })} />
           </Field>
           <Field label="Description">
             <textarea
@@ -176,11 +272,11 @@ function EventComposer({
             <VisibilityPicker value={event.visibility} onChange={(v) => setEvent({ ...event, visibility: v })} />
           </Field>
           <div className="mt-1 flex justify-end">
-            <Button variant="primary" icon="check">
-              Post event
+            <Button variant="primary" icon="check" type="submit" disabled={posting}>
+              {posting ? 'Posting...' : 'Post event'}
             </Button>
           </div>
-        </div>
+        </form>
       </Card>
 
       <div className="sticky top-6">
@@ -198,7 +294,7 @@ function EventComposer({
             </div>
             <div className="min-w-0 px-4 py-3.5">
               <div className="mb-1 flex items-center gap-2">
-                <OrgLogo org={org} size={18} radius={4} />
+                <OrgLogo org={{ color: org.avatar_color ?? '#4F46E5', logo: org.name.slice(0, 2).toUpperCase() }} size={18} radius={4} />
                 <div className="text-[12px] font-medium text-ink-3">{org.name}</div>
                 <VisibilityChip visibility={event.visibility} />
               </div>
@@ -210,7 +306,7 @@ function EventComposer({
         <div className="mt-4 rounded-[10px] bg-bg-2 p-3.5 text-[12.5px] leading-normal text-ink-2">
           <strong className="text-ink-1">Audience preview.</strong>{' '}
           {event.visibility === 'public' && 'Visible to everyone, including non-followers.'}
-          {event.visibility === 'followers' && `Visible to your ${org.followers.toLocaleString()} followers.`}
+          {event.visibility === 'followers' && 'Visible to followers of this org.'}
         </div>
       </div>
     </div>
