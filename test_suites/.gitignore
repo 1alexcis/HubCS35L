@@ -1,0 +1,4 @@
+# Playwright-generated output — never commit these
+test-results/
+playwright-report/
+.last-run.json

@@ -11,7 +11,7 @@ export type DashEvent = {
   description: string | null
   visibility: 'public' | 'followers'
   created_at: string
-  organizations: { name: string; avatar_color: string | null } | null
+  organizations: { name: string; avatar_color?: string | null } | null
 }
 
 export type DashMembership = {
@@ -26,6 +26,13 @@ export type DashMembership = {
     category: string | null
     description: string | null
   } | null
+}
+type DashRsvp = {
+  event_id: string
+}
+
+function dedupeEvents(events: DashEvent[]) {
+  return Array.from(new Map(events.map((event) => [event.id, event])).values())
 }
 
 export function useDashboard() {
@@ -43,33 +50,69 @@ export function useDashboard() {
         if (!authData.user) return
 
         const userId = authData.user.id
-        const [upcomingRes, recentRes, membRes] = await Promise.all([
-          supabase
-            .from('events')
-            .select('*, organizations(name)')
-            .gte('start_time', new Date().toISOString())
-            .order('start_time')
-            .limit(10),
-          supabase
-            .from('events')
-            .select('*, organizations(name)')
-            .order('created_at', { ascending: false })
-            .limit(10),
+        const [membRes, rsvpRes] = await Promise.all([
           supabase
             .from('memberships')
             .select('*, organizations(*)')
             .eq('user_id', userId)
             .limit(20),
+          supabase
+            .from('rsvps')
+            .select('event_id')
+            .eq('user_id', userId),
         ])
 
-        if (upcomingRes.error) setError(upcomingRes.error.message)
-        else setUpcomingEvents((upcomingRes.data ?? []) as DashEvent[])
-
-        if (recentRes.error) setError(recentRes.error.message)
-        else setRecentEvents((recentRes.data ?? []) as DashEvent[])
-
         if (membRes.error) setError(membRes.error.message)
-        else setMemberships((membRes.data ?? []) as DashMembership[])
+        if (rsvpRes.error) setError(rsvpRes.error.message)
+
+        const membershipRows = (membRes.data ?? []) as DashMembership[]
+        const rsvpRows = (rsvpRes.data ?? []) as DashRsvp[]
+        setMemberships(membershipRows)
+
+        const orgIds = membershipRows.map((m) => m.org_id)
+        const eventIds = rsvpRows.map((r) => r.event_id)
+        const eventQueries = []
+
+        if (orgIds.length > 0) {
+          eventQueries.push(
+            supabase
+              .from('events')
+              .select('*, organizations(name)')
+              .in('org_id', orgIds)
+          )
+        }
+
+        if (eventIds.length > 0) {
+          eventQueries.push(
+            supabase
+              .from('events')
+              .select('*, organizations(name)')
+              .in('id', eventIds)
+          )
+        }
+
+        const eventResults = await Promise.all(eventQueries)
+        eventResults.forEach((res) => {
+          if (res.error) setError(res.error.message)
+        })
+
+        const events = dedupeEvents(
+          eventResults.flatMap((res) => (res.data ?? []) as DashEvent[])
+        )
+        const now = new Date()
+
+        setUpcomingEvents(
+          events
+            .filter((event) => new Date(event.start_time) >= now)
+            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+            .slice(0, 10)
+        )
+        setRecentEvents(
+          events
+            .slice()
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 10)
+        )
       } finally {
         setLoading(false)
       }

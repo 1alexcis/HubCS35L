@@ -6,7 +6,6 @@ import { useOrgs } from '@/lib/hooks/useOrgs'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { OrgLogo } from '@/components/ui/org-logo'
 import { Icon } from '@/components/ui/icon'
 
@@ -58,10 +57,6 @@ export default function DiscoverPage() {
           placeholder="Search by name, category, or keyword"
           className="flex-1 bg-transparent text-sm text-ink-1 outline-none"
         />
-        <div className="flex gap-1.5">
-          <Badge tone="blue">Pre-professional</Badge>
-          <Badge>Academic</Badge>
-        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3.5">

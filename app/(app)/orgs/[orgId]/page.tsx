@@ -122,10 +122,10 @@ export default function OrgPage() {
           <div className="flex gap-2 pt-1">
             {isAdmin ? (
               <>
-                <Button icon="settings" onClick={() => router.push('/admin')}>
+                <Button icon="settings" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
                   Admin panel
                 </Button>
-                <Button variant="primary" icon="plus" onClick={() => router.push('/admin')}>
+                <Button variant="primary" icon="plus" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
                   Post event
                 </Button>
               </>
@@ -209,9 +209,6 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
             You&apos;re viewing this org as a guest. <strong className="text-ink-1">Follow</strong> to see
             follower-only posts.
           </div>
-          <Button variant="primary" size="sm" icon="plus">
-            Follow
-          </Button>
         </div>
       </Card>
     )
