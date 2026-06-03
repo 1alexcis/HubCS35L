@@ -4,6 +4,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
+import { roleForOrg, canViewEvent } from '@/lib/visibility'
+import type { Role } from '@/lib/types'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,7 +35,7 @@ type DBOrg = {
 export default function OrgPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const router = useRouter()
-  const { getRole, loading: membLoading, refetch } = useMemberships()
+  const { memberships, loading: membLoading, refetch } = useMemberships()
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
   const [org, setOrg] = useState<DBOrg | null>(null)
   const [loading, setLoading] = useState(true)
@@ -62,7 +64,7 @@ export default function OrgPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    if (role === 'follower') {
+    if (viewerRole === 'follower') {
       await supabase.from('memberships').delete().eq('user_id', user.id).eq('org_id', orgId)
     } else {
       await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
@@ -82,18 +84,14 @@ export default function OrgPage() {
     refetchRsvps()
   }
 
-  const role = getRole(orgId) ?? 'visitor'
-  const isAdmin = role === 'admin'
-  const isFollowerPlus = role === 'admin' || role === 'follower'
-  const isGuest = !isAdmin && !isFollowerPlus
+  const roles = Object.fromEntries(memberships.map(m => [m.org_id, m.role])) as Partial<Record<string, Role>>
+  const adminOf = memberships.find(m => m.role === 'admin')?.org_id
+  const viewerRole = roleForOrg(roles, orgId, adminOf)
+  const isAdmin = viewerRole === 'admin'
+  const isFollower = viewerRole === 'admin' || viewerRole === 'follower'
   const color = org.avatar_color ?? '#4F46E5'
 
-  const visibleEvents = (org.events ?? []).filter(
-    (e) => e.visibility === 'public' || isFollowerPlus
-  )
-  const hiddenEvents = (org.events ?? []).length - visibleEvents.length
-
-  const eventsForDisplay = visibleEvents
+  const eventsForDisplay = (org.events ?? [])
     .slice()
     .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
 
@@ -129,7 +127,7 @@ export default function OrgPage() {
                   Post event
                 </Button>
               </>
-            ) : role === 'follower' ? (
+            ) : viewerRole === 'follower' ? (
               <Button variant="soft" icon="check" onClick={handleFollow}>
                 Following
               </Button>
@@ -141,7 +139,7 @@ export default function OrgPage() {
           </div>
         </div>
 
-        <RoleBanner role={role} hiddenEvents={hiddenEvents} />
+        <RoleBanner role={viewerRole ?? 'guest'} hiddenEvents={0} />
 
         <div className="mt-6 grid grid-cols-[1fr_280px] gap-8">
           <div>
@@ -158,7 +156,7 @@ export default function OrgPage() {
                   <EventRow
                     key={event.id}
                     e={event}
-                    locked={isGuest && event.visibility === 'followers'}
+                    locked={!canViewEvent(event.visibility, viewerRole)}
                     rsvped={hasRsvp(event.id)}
                     onRsvp={() => handleRsvp(event.id)}
                   />
@@ -179,7 +177,7 @@ export default function OrgPage() {
                   <Icon name="globe" size={13} /> Public posts visible to everyone
                 </div>
                 <div className="flex items-center gap-2">
-                  <Icon name="eye" size={13} /> Follower posts visible to {isFollowerPlus ? 'you' : 'followers only'}
+                  <Icon name="eye" size={13} /> Follower posts visible to {isFollower ? 'you' : 'followers only'}
                 </div>
               </div>
             </Card>
