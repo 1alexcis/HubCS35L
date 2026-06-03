@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useMemberships } from '@/lib/hooks/useMemberships'
+import { useRsvps } from '@/lib/hooks/useRsvps'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,7 @@ export default function OrgPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const router = useRouter()
   const { getRole, loading: membLoading, refetch } = useMemberships()
+  const { hasRsvp, refetch: refetchRsvps } = useRsvps()
   const [org, setOrg] = useState<DBOrg | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -66,6 +68,18 @@ export default function OrgPage() {
       await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
     }
     refetch()
+  }
+
+  async function handleRsvp(eventId: string) {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    if (hasRsvp(eventId)) {
+      await supabase.from('rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
+    } else {
+      await supabase.from('rsvps').insert({ user_id: user.id, event_id: eventId })
+    }
+    refetchRsvps()
   }
 
   const role = getRole(orgId) ?? 'visitor'
@@ -141,7 +155,13 @@ export default function OrgPage() {
             ) : (
               <div className="flex flex-col gap-3">
                 {eventsForDisplay.map((event) => (
-                  <EventRow key={event.id} e={event} locked={isGuest && event.visibility === 'followers'} />
+                  <EventRow
+                    key={event.id}
+                    e={event}
+                    locked={isGuest && event.visibility === 'followers'}
+                    rsvped={hasRsvp(event.id)}
+                    onRsvp={() => handleRsvp(event.id)}
+                  />
                 ))}
               </div>
             )}
@@ -225,7 +245,17 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
   return null
 }
 
-function EventRow({ e, locked = false }: { e: DBEvent; locked?: boolean }) {
+function EventRow({
+  e,
+  locked = false,
+  rsvped = false,
+  onRsvp,
+}: {
+  e: DBEvent
+  locked?: boolean
+  rsvped?: boolean
+  onRsvp?: () => void
+}) {
   const d = new Date(e.start_time)
   return (
     <Card padding={0} hoverable>
@@ -255,8 +285,13 @@ function EventRow({ e, locked = false }: { e: DBEvent; locked?: boolean }) {
               Locked
             </Button>
           ) : (
-            <Button variant="secondary" size="sm">
-              RSVP
+            <Button
+              variant={rsvped ? 'soft' : 'secondary'}
+              size="sm"
+              icon={rsvped ? 'check' : undefined}
+              onClick={onRsvp}
+            >
+              {rsvped ? 'Going' : 'RSVP'}
             </Button>
           )}
         </div>
