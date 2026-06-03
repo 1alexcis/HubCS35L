@@ -45,7 +45,7 @@ export default function DashboardPage() {
           <section>
             <SectionHeader
               title="Upcoming"
-              subtitle="Events from your followed orgs"
+              subtitle="Events from your orgs and RSVPs"
             />
             <div className="flex flex-col gap-2.5">
               {upcomingEvents.map((e) => {
