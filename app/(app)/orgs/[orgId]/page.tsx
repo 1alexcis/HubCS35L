@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { fmtDate, fmtTime } from '@/lib/format'
@@ -60,24 +61,26 @@ export default function OrgPage() {
 
   async function handleFollow() {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
+    if (!userId) return
     if (role === 'follower') {
-      await supabase.from('memberships').delete().eq('user_id', user.id).eq('org_id', orgId)
+      await supabase.from('memberships').delete().eq('user_id', userId).eq('org_id', orgId)
     } else {
-      await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
+      await supabase.from('memberships').insert({ user_id: userId, org_id: orgId, role: 'follower' })
     }
     refetch()
   }
 
   async function handleRsvp(eventId: string) {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
+    if (!userId) return
     if (hasRsvp(eventId)) {
-      await supabase.from('rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
+      await supabase.from('rsvps').delete().eq('user_id', userId).eq('event_id', eventId)
     } else {
-      await supabase.from('rsvps').insert({ user_id: user.id, event_id: eventId })
+      await supabase.from('rsvps').insert({ user_id: userId, event_id: eventId })
     }
     refetchRsvps()
   }

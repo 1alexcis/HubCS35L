@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PROTECTED = ['/dashboard', '/discover', '/orgs', '/admin']
+//Allows automated test user to bypass security if env variable is set
+const hasE2EUser = Boolean(process.env.NEXT_PUBLIC_UNSAFE_E2E_USER_ID?.trim())
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })
@@ -29,7 +31,7 @@ export async function proxy(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
   const { pathname } = request.nextUrl
 
-  if (!session && PROTECTED.some(p => pathname.startsWith(p))) {
+  if (!session && !hasE2EUser && PROTECTED.some(p => pathname.startsWith(p))) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

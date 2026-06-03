@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 import { useOrgs } from '@/lib/hooks/useOrgs'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { Card } from '@/components/ui/card'
@@ -18,12 +19,13 @@ export default function DiscoverPage() {
   async function handleFollow(e: React.MouseEvent, orgId: string, isFollower: boolean) {
     e.stopPropagation()
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
+    if (!userId) return
     if (isFollower) {
-      await supabase.from('memberships').delete().eq('user_id', user.id).eq('org_id', orgId)
+      await supabase.from('memberships').delete().eq('user_id', userId).eq('org_id', orgId)
     } else {
-      await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
+      await supabase.from('memberships').insert({ user_id: userId, org_id: orgId, role: 'follower' })
     }
     refetch()
   }
