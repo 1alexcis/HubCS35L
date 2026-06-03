@@ -12,7 +12,7 @@ import { Icon } from '@/components/ui/icon'
 export default function DiscoverPage() {
   const router = useRouter()
   const { orgs, loading } = useOrgs()
-  const { getRole, refetch } = useMemberships()
+  const { memberships, refetch } = useMemberships()
   const [q, setQ] = useState('')
 
   async function handleFollow(e: React.MouseEvent, orgId: string, isFollower: boolean) {
@@ -61,7 +61,7 @@ export default function DiscoverPage() {
 
       <div className="grid grid-cols-3 gap-3.5">
         {filtered.map((o) => {
-          const role = getRole(o.id)
+          const role = memberships.find(m => m.org_id === o.id)?.role ?? null
           const isFollower = role != null
           const color = o.avatar_color ?? '#4F46E5'
           return (

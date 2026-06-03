@@ -15,7 +15,7 @@ const NAV = [
 export function Sidebar() {
   const path = usePathname()
   const { user, loading: userLoading } = useUser()
-  const { memberships, loading: membLoading, getRole } = useMemberships()
+  const { memberships, loading: membLoading } = useMemberships()
 
   if (userLoading || membLoading) return null
 
@@ -68,7 +68,7 @@ export function Sidebar() {
                     radius={4}
                   />
                   <span className="truncate">{org.name}</span>
-                  {getRole(m.org_id) === 'admin' && (
+                  {memberships.find(mb => mb.org_id === m.org_id)?.role === 'admin' && (
                     <span className="ml-auto text-[10px] text-ink-3">Admin</span>
                   )}
                 </Link>
