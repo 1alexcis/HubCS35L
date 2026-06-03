@@ -93,12 +93,17 @@ export default function OrgPage() {
     // Use the E2E test user when configured; otherwise use normal Supabase auth.
     const userId = await getCurrentUserId(supabase)
     if (!userId) return
-    if (hasRsvp(eventId)) {
+    const removing = hasRsvp(eventId)
+    if (removing) {
       await supabase.from('rsvps').delete().eq('user_id', userId).eq('event_id', eventId)
     } else {
       await supabase.from('rsvps').insert({ user_id: userId, event_id: eventId })
     }
     refetchRsvps()
+    setRsvpCounts(prev => ({
+      ...prev,
+      [eventId]: Math.max(0, (prev[eventId] ?? 0) + (removing ? -1 : 1)),
+    }))
   }
 
   const roleMap = Object.fromEntries(memberships.map(m => [m.org_id, m.role]))
