@@ -38,6 +38,7 @@ export default function OrgPage() {
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
   const [org, setOrg] = useState<DBOrg | null>(null)
   const [loading, setLoading] = useState(true)
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const supabase = createClient()
@@ -49,6 +50,18 @@ export default function OrgPage() {
           .eq('id', orgId)
           .single()
         setOrg(data as DBOrg)
+        const eventIds = ((data as DBOrg)?.events ?? []).map(e => e.id)
+        if (eventIds.length > 0) {
+          const { data: rsvpRows } = await supabase
+            .from('rsvps')
+            .select('event_id')
+            .in('event_id', eventIds)
+          const counts: Record<string, number> = {}
+          for (const row of rsvpRows ?? []) {
+            counts[row.event_id] = (counts[row.event_id] ?? 0) + 1
+          }
+          setRsvpCounts(counts)
+        }
       } finally {
         setLoading(false)
       }
@@ -157,6 +170,7 @@ export default function OrgPage() {
                     locked={!canViewEvent(event.visibility, viewerRole)}
                     rsvped={hasRsvp(event.id)}
                     onRsvp={() => handleRsvp(event.id)}
+                    rsvpCount={isFollower ? (rsvpCounts[event.id] ?? 0) : undefined}
                   />
                 ))}
               </div>
@@ -243,11 +257,13 @@ function EventRow({
   locked = false,
   rsvped = false,
   onRsvp,
+  rsvpCount,
 }: {
   e: DBEvent
   locked?: boolean
   rsvped?: boolean
   onRsvp?: () => void
+  rsvpCount?: number
 }) {
   const d = new Date(e.start_time)
   return (
@@ -269,7 +285,12 @@ function EventRow({
           {locked ? (
             <div className="mt-1 text-[12.5px] text-ink-3">Follow this org to view event details.</div>
           ) : (
-            <div className="mt-1 text-[12.5px] text-ink-3">{e.location}</div>
+            <div className="mt-1 text-[12.5px] text-ink-3">
+              {e.location}
+              {rsvpCount !== undefined && (
+                <span className="ml-2 text-ink-3">· {rsvpCount} going</span>
+              )}
+            </div>
           )}
         </div>
         <div className="p-3.5">
