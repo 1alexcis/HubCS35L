@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/org-logo'
@@ -31,9 +32,10 @@ export default function NewOrgPage() {
     setError('')
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
 
-    if (!user) {
+    if (!userId) {
       setError('You need to be logged in to create an org.')
       setLoading(false)
       return
@@ -53,7 +55,7 @@ export default function NewOrgPage() {
 
     const { error: membErr } = await supabase
       .from('memberships')
-      .insert({ user_id: user.id, org_id: org.id, role: 'admin' })
+      .insert({ user_id: userId, org_id: org.id, role: 'admin' })
 
     if (membErr) {
       setError(membErr.message)

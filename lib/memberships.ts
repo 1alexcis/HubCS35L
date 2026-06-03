@@ -1,5 +1,6 @@
 import type { Role } from './types'
 import type { RoleMap } from './memberships-client'
+import { getCurrentUserId } from './supabase/current-user'
 
 export type { RoleMap } from './memberships-client'
 export { getMyRolesMock } from './memberships-client'
@@ -15,12 +16,13 @@ export async function getMyRolesFromDb(): Promise<RoleMap> {
   // Dynamic import keeps next/headers out of the client bundle.
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return {}
+  // Use the E2E test user when configured; otherwise use normal Supabase auth.
+  const userId = await getCurrentUserId(supabase)
+  if (!userId) return {}
   const { data } = await supabase
     .from('memberships')
     .select('org_id, role')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
   if (!data) return {}
   return Object.fromEntries(
     (data as { org_id: string; role: string }[]).map(m => [m.org_id, m.role as Role])
