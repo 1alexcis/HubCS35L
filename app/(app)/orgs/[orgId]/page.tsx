@@ -209,9 +209,6 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
             You&apos;re viewing this org as a guest. <strong className="text-ink-1">Follow</strong> to see
             follower-only posts.
           </div>
-          <Button variant="primary" size="sm" icon="plus">
-            Follow
-          </Button>
         </div>
       </Card>
     )
