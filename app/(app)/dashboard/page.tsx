@@ -22,7 +22,7 @@ function orgProps(org: DashEvent['organizations']) {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { upcomingEvents, recentEvents, memberships, loading } = useDashboard()
+  const { upcomingEvents, memberships, loading } = useDashboard()
   const { hasRsvp, refetch: refetchRsvps } = useRsvps()
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
@@ -115,9 +115,9 @@ export default function DashboardPage() {
         {/* RIGHT */}
         <div className="flex flex-col gap-7">
           <section>
-            <SectionHeader title="Recent events" />
+            <SectionHeader title="Your RSVPs" />
             <div className="flex flex-col gap-2.5">
-              {recentEvents.map((e) => {
+              {upcomingEvents.filter((e) => hasRsvp(e.id)).map((e) => {
                 const d = new Date(e.start_time)
                 return (
                   <Card key={e.id} hoverable onClick={() => router.push(`/orgs/${e.org_id}`)}>
@@ -128,12 +128,19 @@ export default function DashboardPage() {
                       <span className="text-[11.5px] text-ink-3">{fmtDate(d)}</span>
                     </div>
                     <div className="text-[14.5px] font-medium text-ink-1">{e.title}</div>
-                    {e.description && (
-                      <p className="mt-1.5 line-clamp-2 text-[13px] leading-normal text-ink-2">{e.description}</p>
+                    {e.location && (
+                      <div className="mt-1 flex items-center gap-1.5 text-[12.5px] text-ink-3">
+                        <Icon name="pin" size={12} /> {e.location}
+                      </div>
                     )}
                   </Card>
                 )
               })}
+              {upcomingEvents.filter((e) => hasRsvp(e.id)).length === 0 && (
+                <Card>
+                  <div className="py-5 text-center text-sm text-ink-3">No RSVPs yet.</div>
+                </Card>
+              )}
             </div>
           </section>
 
