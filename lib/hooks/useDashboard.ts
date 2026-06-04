@@ -1,3 +1,4 @@
+/* Hook that loads the data shown on the dashboard for the current user */
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentUserId } from '@/lib/supabase/current-user'

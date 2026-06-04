@@ -1,3 +1,4 @@
+/* Core types for the app */
 export type Role = 'admin' | 'follower'
 export type Visibility = 'public' | 'followers'
 

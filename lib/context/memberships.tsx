@@ -1,4 +1,5 @@
 'use client'
+/* React context that shares the current user's org memberships across the app */
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentUserId } from '@/lib/supabase/current-user'

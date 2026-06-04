@@ -1,3 +1,4 @@
+/* runs seed script for initial data */
 import { createClient } from '@supabase/supabase-js'
 import { ORGS, EVENTS, ME } from '../lib/data'
 

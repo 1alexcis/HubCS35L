@@ -1,3 +1,4 @@
+/* OAuth and magic link callback: exchanges the code for a session and saves the profile */
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 

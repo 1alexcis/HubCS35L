@@ -1,3 +1,4 @@
+/* Hook that loads the list of organizations for the discover page */
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 

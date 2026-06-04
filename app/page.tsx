@@ -1,4 +1,5 @@
 'use client'
+/* Sign in page: email magic link or Google OAuth, restricted to UCLA addresses */
 import { useState } from 'react'
 import { Icon } from '@/components/ui/icon'
 import { Button } from '@/components/ui/button'

@@ -1,3 +1,4 @@
+/* Client side helpers for reading and updating org memberships */
 import type { Role } from './types'
 import { ME } from './data'
 

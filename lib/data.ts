@@ -1,3 +1,4 @@
+/* Leftover mock data for development, keeping for fallback data */
 import type { Org, Event, CurrentUser } from './types'
 
 export const TODAY = new Date(2026, 4, 6)

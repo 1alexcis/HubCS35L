@@ -1,3 +1,4 @@
+/* Hook that exposes the currently signed in user */
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { E2E_USER_EMAIL, getE2EUserId } from '@/lib/supabase/current-user'

@@ -1,3 +1,4 @@
+/* seed script for initial data */
 -- organizations
 INSERT INTO organizations (id, name, description, created_at)
 VALUES

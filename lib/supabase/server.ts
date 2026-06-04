@@ -1,3 +1,4 @@
+/* Creates a Supabase client for use on the server, backed by cookies */
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 

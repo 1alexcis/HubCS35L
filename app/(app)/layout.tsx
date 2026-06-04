@@ -1,3 +1,4 @@
+/* Shared layout for signed in pages: sidebar, top bar, and memberships context */
 import { Sidebar } from '@/components/shell/sidebar'
 import { TopBar } from '@/components/shell/topbar'
 import { MembershipsProvider } from '@/lib/context/memberships'

@@ -1,3 +1,4 @@
+/* Server side helpers for reading a user's org memberships */
 import type { Role } from './types'
 import type { RoleMap } from './memberships-client'
 import { getCurrentUserId } from './supabase/current-user'

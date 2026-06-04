@@ -1,8 +1,10 @@
 'use client'
+/* Left navigation rail: app links, the viewer's orgs, and account controls */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@/lib/hooks/useUser'
 import { useMemberships } from '@/lib/hooks/useMemberships'
+import { createClient } from '@/lib/supabase/client'
 import { Avatar } from '@/components/ui/avatar'
 import { OrgLogo } from '@/components/ui/org-logo'
 import { Icon, type IconName } from '@/components/ui/icon'
@@ -18,6 +20,12 @@ export function Sidebar() {
   const { memberships, loading: membLoading } = useMemberships()
 
   if (userLoading || membLoading) return null
+
+  // End the Supabase session and send the user back to the sign in page.
+  async function handleSignOut() {
+    await createClient().auth.signOut()
+    window.location.href = '/'
+  }
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -81,6 +89,14 @@ export function Sidebar() {
       <div className="border-t border-border px-4 py-3 flex items-center gap-2.5 flex-shrink-0">
         <Avatar initials={initials} size={28} />
         <span className="text-xs text-ink-2 truncate">{user?.email ?? ''}</span>
+        <button
+          onClick={handleSignOut}
+          aria-label="Sign out"
+          title="Sign out"
+          className="ml-auto p-1.5 rounded-lg text-ink-3 hover:bg-bg-2 hover:text-ink-1 transition-colors"
+        >
+          <Icon name="logout" size={15} />
+        </button>
       </div>
     </aside>
   )

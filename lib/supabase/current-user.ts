@@ -1,3 +1,4 @@
+/* Resolves the current user id, falling back to a test user during E2E runs */
 type SupabaseWithAuth = {
   auth: {
     getUser: () => Promise<{ data: { user: { id: string } | null } }>

@@ -1,3 +1,4 @@
+/* Hook that tracks which events the current user has RSVPed to */
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentUserId } from '@/lib/supabase/current-user'

@@ -1,3 +1,4 @@
+/* Creates a Supabase client for use in the browser */
 import { createBrowserClient } from '@supabase/ssr'
 
 export const createClient = () =>

@@ -1,3 +1,4 @@
+/* Visibility checks for events, separate file for clarity & information-hiding principle (this stuff is likely to change)*/
 import type { Role, Visibility } from '@/lib/types'
 
 export type ViewerRole = Role | undefined
