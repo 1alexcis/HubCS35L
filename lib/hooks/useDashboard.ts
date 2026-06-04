@@ -110,8 +110,8 @@ export function useDashboard() {
         )
         setRecentEvents(
           events
-            .slice()
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .filter((event) => new Date(event.start_time) >= now)
+            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
             .slice(0, 10)
         )
       } finally {
