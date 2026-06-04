@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 
 export type DashEvent = {
   id: string
@@ -46,10 +47,10 @@ export function useDashboard() {
     const supabase = createClient()
     async function load() {
       try {
-        const { data: authData } = await supabase.auth.getUser()
-        if (!authData.user) return
+        // Use the E2E test user when configured; otherwise use normal Supabase auth.
+        const userId = await getCurrentUserId(supabase)
+        if (!userId) return
 
-        const userId = authData.user.id
         const [membRes, rsvpRes] = await Promise.all([
           supabase
             .from('memberships')

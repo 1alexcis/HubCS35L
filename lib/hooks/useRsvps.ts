@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 
 type Rsvp = {
   id: string
@@ -17,12 +18,13 @@ export function useRsvps() {
     const supabase = createClient()
     async function load() {
       try {
-        const { data: authData } = await supabase.auth.getUser()
-        if (!authData.user) return
+        // Use the E2E test user when configured; otherwise use normal Supabase auth.
+        const userId = await getCurrentUserId(supabase)
+        if (!userId) return
         const { data: rows } = await supabase
           .from('rsvps')
           .select('*')
-          .eq('user_id', authData.user.id)
+          .eq('user_id', userId)
         setRsvps((rows ?? []) as Rsvp[])
       } finally {
         setLoading(false)

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
@@ -74,25 +75,29 @@ export default function OrgPage() {
 
   async function handleFollow() {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
+    if (!userId) return
+  
     if (viewerRole === 'follower') {
-      await supabase.from('memberships').delete().eq('user_id', user.id).eq('org_id', orgId)
+      await supabase.from('memberships').delete().eq('user_id', userId).eq('org_id', orgId)
     } else {
-      await supabase.from('memberships').insert({ user_id: user.id, org_id: orgId, role: 'follower' })
+      await supabase.from('memberships').insert({ user_id: userId, org_id: orgId, role: 'follower' })
     }
+  
     refetch()
   }
 
   async function handleRsvp(eventId: string) {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use the E2E test user when configured; otherwise use normal Supabase auth.
+    const userId = await getCurrentUserId(supabase)
+    if (!userId) return
     const removing = hasRsvp(eventId)
     if (removing) {
-      await supabase.from('rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
+      await supabase.from('rsvps').delete().eq('user_id', userId).eq('event_id', eventId)
     } else {
-      await supabase.from('rsvps').insert({ user_id: user.id, event_id: eventId })
+      await supabase.from('rsvps').insert({ user_id: userId, event_id: eventId })
     }
     refetchRsvps()
     setRsvpCounts(prev => ({
@@ -135,14 +140,9 @@ export default function OrgPage() {
           </div>
           <div className="flex gap-2 pt-1">
             {isAdmin ? (
-              <>
-                <Button icon="settings" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
-                  Admin panel
-                </Button>
-                <Button variant="primary" icon="plus" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
-                  Post event
-                </Button>
-              </>
+              <Button variant="primary" icon="plus" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
+                Post event
+              </Button>
             ) : viewerRole === 'follower' ? (
               <Button variant="soft" icon="check" onClick={handleFollow}>
                 Following
@@ -239,7 +239,7 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
         <div className="flex items-center gap-3">
           <Icon name="sparkle" size={16} style={{ color: '#7a5a1a' }} />
           <div className="flex-1 text-[13.5px] text-ink-2">
-            You&apos;re an admin of this org. You see everything, plus admin controls.
+            You&apos;re an admin of this org. You see everything, create event now!
           </div>
         </div>
       </Card>

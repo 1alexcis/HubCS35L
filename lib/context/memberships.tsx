@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 
 type Membership = {
   id: string
@@ -33,12 +34,13 @@ export function MembershipsProvider({ children }: { children: React.ReactNode })
     const supabase = createClient()
     async function load() {
       try {
-        const { data: authData } = await supabase.auth.getUser()
-        if (!authData.user) return
+        // Use the E2E test user when configured; otherwise use normal Supabase auth.
+        const userId = await getCurrentUserId(supabase)
+        if (!userId) return
         const { data: rows } = await supabase
           .from('memberships')
           .select('*, organizations(*)')
-          .eq('user_id', authData.user.id)
+          .eq('user_id', userId)
         setMemberships((rows ?? []) as Membership[])
       } finally {
         setLoading(false)

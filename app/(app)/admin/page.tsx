@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentUserId } from '@/lib/supabase/current-user'
 import type { Visibility } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,7 +34,6 @@ type EventDraft = {
 
 const NAV: { id: Composer; icon: IconName; label: string }[] = [
   { id: 'event', icon: 'calendar', label: 'Post event' },
-  { id: 'settings', icon: 'settings', label: 'Org settings' },
 ]
 
 const FIELD = 'w-full rounded-lg border border-border bg-bg-1 px-3 py-2.5 text-[13.5px] text-ink-1 outline-none'
@@ -61,13 +61,14 @@ export default function AdminPage() {
     const supabase = createClient()
     async function loadAdminOrg() {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        // Use the E2E test user when configured; otherwise use normal Supabase auth.
+        const userId = await getCurrentUserId(supabase)
+        if (!userId) return
 
         const { data, error: err } = await supabase
           .from('memberships')
           .select('organizations(*)')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('role', 'admin')
 
         if (err) {
@@ -174,7 +175,6 @@ export default function AdminPage() {
               onSubmit={handlePostEvent}
             />
           )}
-          {composer === 'settings' && <Placeholder text="Org settings — coming soon." />}
         </div>
       </div>
     </div>
@@ -314,10 +314,3 @@ function EventComposer({
   )
 }
 
-function Placeholder({ text }: { text: string }) {
-  return (
-    <Card>
-      <div className="px-4 py-8 text-center text-sm text-ink-3">{text}</div>
-    </Card>
-  )
-}
