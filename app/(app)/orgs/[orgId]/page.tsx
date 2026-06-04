@@ -140,14 +140,9 @@ export default function OrgPage() {
           </div>
           <div className="flex gap-2 pt-1">
             {isAdmin ? (
-              <>
-                <Button icon="settings" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
-                  Admin panel
-                </Button>
-                <Button variant="primary" icon="plus" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
-                  Post event
-                </Button>
-              </>
+              <Button variant="primary" icon="plus" onClick={() => router.push(`/admin?orgId=${org.id}`)}>
+                Post event
+              </Button>
             ) : viewerRole === 'follower' ? (
               <Button variant="soft" icon="check" onClick={handleFollow}>
                 Following
@@ -244,7 +239,7 @@ function RoleBanner({ role, hiddenEvents }: { role: string; hiddenEvents: number
         <div className="flex items-center gap-3">
           <Icon name="sparkle" size={16} style={{ color: '#7a5a1a' }} />
           <div className="flex-1 text-[13.5px] text-ink-2">
-            You&apos;re an admin of this org. You see everything, plus admin controls.
+            You&apos;re an admin of this org. You see everything, create event now!
           </div>
         </div>
       </Card>

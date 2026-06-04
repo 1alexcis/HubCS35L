@@ -34,7 +34,6 @@ type EventDraft = {
 
 const NAV: { id: Composer; icon: IconName; label: string }[] = [
   { id: 'event', icon: 'calendar', label: 'Post event' },
-  { id: 'settings', icon: 'settings', label: 'Org settings' },
 ]
 
 const FIELD = 'w-full rounded-lg border border-border bg-bg-1 px-3 py-2.5 text-[13.5px] text-ink-1 outline-none'
@@ -176,7 +175,6 @@ export default function AdminPage() {
               onSubmit={handlePostEvent}
             />
           )}
-          {composer === 'settings' && <Placeholder text="Org settings — coming soon." />}
         </div>
       </div>
     </div>
@@ -316,10 +314,3 @@ function EventComposer({
   )
 }
 
-function Placeholder({ text }: { text: string }) {
-  return (
-    <Card>
-      <div className="px-4 py-8 text-center text-sm text-ink-3">{text}</div>
-    </Card>
-  )
-}
