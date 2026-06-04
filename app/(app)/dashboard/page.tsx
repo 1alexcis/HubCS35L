@@ -55,7 +55,7 @@ export default function DashboardPage() {
           className="mt-1.5 font-serif font-medium leading-tight text-ink-1"
           style={{ fontSize: 32, letterSpacing: '-0.02em' }}
         >
-          Good afternoon.
+          Good day.
         </h1>
         <div className="mt-1.5 text-sm text-ink-3">
           {visibleUpcoming.length} upcoming events · {memberships.length} orgs followed
