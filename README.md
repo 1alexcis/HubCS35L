@@ -67,6 +67,85 @@ The test user is an admin of one organization, a follower of another, and a gues
 - `supabase/` - database schema and seed data
 - `test_suites/` - Playwright tests
 
+## Data Model (Entity-Relationship Diagram)
+
+```mermaid
+erDiagram
+    profiles {
+        uuid id PK
+        text name
+        text email
+        text avatar_color
+        timestamptz created_at
+    }
+    organizations {
+        uuid id PK
+        text name
+        text description
+        text category
+        text avatar_color
+        timestamptz created_at
+    }
+    events {
+        uuid id PK
+        text title
+        timestamptz start_time
+        timestamptz end_time
+        text location
+        text description
+        text visibility
+        timestamptz created_at
+    }
+
+    profiles }o--o{ organizations : membership
+    profiles }o--o{ events : rsvp
+    organizations ||--o{ events : hosts
+```
+
+`membership` (profiles-organizations, N-M) and `rsvp` (profiles-events, N-M) are junction tables; `hosts` (organizations-events) is 1-N.
+
+## Domain Model (UML Class Diagram)
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Profile {
+        -id: string
+        -name: string
+        -email: string
+    }
+    class Organization {
+        -id: string
+        -name: string
+        -description: string
+    }
+    class Event {
+        -id: string
+        -orgId: string
+        -title: string
+        -startTime: Date
+        -location: string
+        -visibility: Visibility
+    }
+    class Rsvp {
+        -id: string
+        -userId: string
+        -eventId: string
+        -createdAt: Date
+    }
+    class useRsvps {
+        -rsvps: Rsvp[]
+        +hasRsvp(eventId: string) boolean
+        +refetch() void
+    }
+
+    Organization "1" *-- "0..*" Event : hosts
+    Event "1" *-- "0..*" Rsvp : receives
+    Profile "1" *-- "0..*" Rsvp : makes
+    useRsvps "1" o-- "0..*" Rsvp : caches
+```
+
 ## Notes
 
 - Row-level security is enabled on the database, so data access is enforced at the database layer.
