@@ -11,8 +11,8 @@ ClubHub is a web application for UCLA student organizations. Students can browse
 
 ## Prerequisites
 
-- Node.js
-- A Supabase project with its URL and API keys
+- Node.js 20 or newer (required by Next.js 16 / React 19)
+- A Supabase project (the free tier works) with its project URL and API keys
 
 ## Setup
 
@@ -30,13 +30,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
+Set up the database schema. In your Supabase project's SQL editor, run the migration files in `supabase/migrations/` in numerical order. They create the `profiles`, `organizations`, `memberships`, `events`, and `rsvps` tables along with the row-level security policies.
+
+Seed the database with some sample organizations, events, and a test profile:
+
+```bash
+npm run seed
+```
+
 Start the development server:
 
 ```bash
 npm run dev
 ```
 
-The application runs at http://localhost:3000. Sign in with a UCLA email address (magic link) or with Google.
+The application runs at http://localhost:3000. Sign in with a UCLA email address, and a magic link will be sent to your inbox to finish signing in.
 
 ## Testing
 
@@ -63,9 +71,32 @@ The test user is an admin of one organization, a follower of another, and a gues
 
 - `app/` - pages and routing
 - `components/` - reusable UI components
-- `lib/` - hooks, Supabase clients, and helpers
+- `lib/` - data access layer (`lib/db.ts`), hooks, Supabase clients, and helpers
 - `supabase/` - database schema and seed data
 - `test_suites/` - Playwright tests
+
+## System Architecture
+
+This diagram shows how a request flows through the app. The React layer never talks to the database directly. It goes through the data access layer in `lib/db.ts`, which is the only part of the app that knows about Supabase. This keeps the UI decoupled from the backend (see the design decisions in our report for the reasoning).
+
+```mermaid
+flowchart TD
+    subgraph Browser["Browser (React)"]
+        Pages["Pages & components<br/>(discover, org, admin, dashboard)"]
+        Hooks["Hooks & context<br/>(useOrgs, useRsvps, useDashboard, memberships)"]
+    end
+    DB["Data access layer<br/>lib/db.ts"]
+    Client["Supabase client<br/>lib/supabase/"]
+    Supabase[("Supabase<br/>Postgres + Auth")]
+
+    Pages --> Hooks
+    Pages -->|writes| DB
+    Hooks -->|reads| DB
+    DB --> Client
+    Client --> Supabase
+```
+
+The data access layer is the single seam between the frontend and the backend: components and hooks call plain functions like `followOrg(orgId)`, and those functions are the only code that builds Supabase queries.
 
 ## Data Model (Entity-Relationship Diagram)
 
