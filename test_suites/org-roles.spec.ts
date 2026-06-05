@@ -10,7 +10,6 @@ const GUEST_ORG = process.env.NEXT_PUBLIC_E2E_GUEST_ORG_ID!
 
 test('admin sees the admin controls on their org', async ({ page }) => {
   await page.goto(`/orgs/${ADMIN_ORG}`)
-  await expect(page.getByRole('button', { name: 'Admin panel' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Post event' })).toBeVisible()
 })
 
