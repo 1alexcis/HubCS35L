@@ -1,7 +1,6 @@
 /* Hook that tracks which events the current user has RSVPed to */
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { listMyRsvps } from '@/lib/db'
 
 type Rsvp = {
   id: string
@@ -16,17 +15,9 @@ export function useRsvps() {
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const supabase = createClient()
     async function load() {
       try {
-        // Use the E2E test user when configured; otherwise use normal Supabase auth.
-        const userId = await getCurrentUserId(supabase)
-        if (!userId) return
-        const { data: rows } = await supabase
-          .from('rsvps')
-          .select('*')
-          .eq('user_id', userId)
-        setRsvps((rows ?? []) as Rsvp[])
+        setRsvps((await listMyRsvps()) as Rsvp[])
       } finally {
         setLoading(false)
       }

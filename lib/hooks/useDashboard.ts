@@ -1,7 +1,6 @@
 /* Hook that loads the data shown on the dashboard for the current user */
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { listMyMemberships, listMyRsvps, listEventsForOrgs, listEventsByIds } from '@/lib/db'
 
 export type DashEvent = {
   id: string
@@ -42,65 +41,25 @@ export function useDashboard() {
   const [recentEvents, setRecentEvents] = useState<DashEvent[]>([])
   const [memberships, setMemberships] = useState<DashMembership[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
     async function load() {
       try {
-        // Use the E2E test user when configured; otherwise use normal Supabase auth.
-        const userId = await getCurrentUserId(supabase)
-        if (!userId) return
-
-        const [membRes, rsvpRes] = await Promise.all([
-          supabase
-            .from('memberships')
-            .select('*, organizations(*)')
-            .eq('user_id', userId)
-            .limit(20),
-          supabase
-            .from('rsvps')
-            .select('event_id')
-            .eq('user_id', userId),
-        ])
-
-        if (membRes.error) setError(membRes.error.message)
-        if (rsvpRes.error) setError(rsvpRes.error.message)
-
-        const membershipRows = (membRes.data ?? []) as DashMembership[]
-        const rsvpRows = (rsvpRes.data ?? []) as DashRsvp[]
+        const [membershipRows, rsvpRows] = await Promise.all([
+          listMyMemberships(20),
+          listMyRsvps(),
+        ]) as [DashMembership[], DashRsvp[]]
         setMemberships(membershipRows)
 
         const orgIds = membershipRows.map((m) => m.org_id)
         const eventIds = rsvpRows.map((r) => r.event_id)
         const eventQueries = []
 
-        if (orgIds.length > 0) {
-          eventQueries.push(
-            supabase
-              .from('events')
-              .select('*, organizations(name)')
-              .in('org_id', orgIds)
-          )
-        }
-
-        if (eventIds.length > 0) {
-          eventQueries.push(
-            supabase
-              .from('events')
-              .select('*, organizations(name)')
-              .in('id', eventIds)
-          )
-        }
+        if (orgIds.length > 0) eventQueries.push(listEventsForOrgs(orgIds))
+        if (eventIds.length > 0) eventQueries.push(listEventsByIds(eventIds))
 
         const eventResults = await Promise.all(eventQueries)
-        eventResults.forEach((res) => {
-          if (res.error) setError(res.error.message)
-        })
-
-        const events = dedupeEvents(
-          eventResults.flatMap((res) => (res.data ?? []) as DashEvent[])
-        )
+        const events = dedupeEvents(eventResults.flat() as DashEvent[])
         const now = new Date()
 
         setUpcomingEvents(
@@ -122,5 +81,5 @@ export function useDashboard() {
     load()
   }, [])
 
-  return { upcomingEvents, recentEvents, memberships, loading, error }
+  return { upcomingEvents, recentEvents, memberships, loading }
 }
