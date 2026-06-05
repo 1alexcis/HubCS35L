@@ -1,7 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { addRsvp, removeRsvp } from '@/lib/db'
 import { useDashboard, type DashEvent } from '@/lib/hooks/useDashboard'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
@@ -35,15 +34,8 @@ export default function DashboardPage() {
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>
 
   async function handleRsvp(eventId: string) {
-    const supabase = createClient()
-    // Use the E2E test user when configured; otherwise use normal Supabase auth.
-    const userId = await getCurrentUserId(supabase)
-    if (!userId) return
-    if (hasRsvp(eventId)) {
-      await supabase.from('rsvps').delete().eq('user_id', userId).eq('event_id', eventId)
-    } else {
-      await supabase.from('rsvps').insert({ user_id: userId, event_id: eventId })
-    }
+    if (hasRsvp(eventId)) await removeRsvp(eventId)
+    else await addRsvp(eventId)
     refetchRsvps()
   }
 

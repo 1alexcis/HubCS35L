@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { listMyAdminOrgs, createEvent } from '@/lib/db'
 import type { Visibility } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,25 +57,10 @@ export default function AdminPage() {
   })
 
   useEffect(() => {
-    const supabase = createClient()
     async function loadAdminOrg() {
       try {
-        // Use the E2E test user when configured; otherwise use normal Supabase auth.
-        const userId = await getCurrentUserId(supabase)
-        if (!userId) return
-
-        const { data, error: err } = await supabase
-          .from('memberships')
-          .select('organizations(*)')
-          .eq('user_id', userId)
-          .eq('role', 'admin')
-
-        if (err) {
-          setError(err.message)
-          return
-        }
-
-        const adminOrgs = ((data ?? []) as AdminMembership[])
+        const data = await listMyAdminOrgs()
+        const adminOrgs = (data as AdminMembership[])
           .map((m) => Array.isArray(m.organizations) ? m.organizations[0] : m.organizations)
           .filter((o): o is DBOrg => Boolean(o))
         setOrg(adminOrgs.find((o) => o.id === requestedOrgId) ?? adminOrgs[0] ?? null)
@@ -102,23 +86,20 @@ export default function AdminPage() {
 
     setPosting(true)
     setError('')
-    const supabase = createClient()
-    const { error: err } = await supabase.from('events').insert({
-      org_id: org.id,
-      title,
-      start_time: new Date(`${event.date}T${event.time}`).toISOString(),
-      location: event.location.trim(),
-      description: event.description.trim(),
-      visibility: event.visibility,
-    })
-
-    if (err) {
-      setError(err.message)
+    try {
+      await createEvent({
+        orgId: org.id,
+        title,
+        startTime: new Date(`${event.date}T${event.time}`).toISOString(),
+        location: event.location.trim(),
+        description: event.description.trim(),
+        visibility: event.visibility,
+      })
+      router.push(`/orgs/${org.id}`)
+    } catch (err) {
+      setError((err as Error).message)
       setPosting(false)
-      return
     }
-
-    router.push(`/orgs/${org.id}`)
   }
 
   if (loading) return <div className="p-8 text-sm text-ink-3">Loading...</div>

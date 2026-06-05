@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { getOrgWithEvents, countRsvpsForEvents, followOrg, unfollowOrg, addRsvp, removeRsvp } from '@/lib/db'
 import { useMemberships } from '@/lib/hooks/useMemberships'
 import { useRsvps } from '@/lib/hooks/useRsvps'
 import { roleForOrg, canViewEvent } from '@/lib/visibility'
@@ -42,26 +41,13 @@ export default function OrgPage() {
   const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
-    const supabase = createClient()
     async function load() {
       try {
-        const { data } = await supabase
-          .from('organizations')
-          .select('*, events(*)')
-          .eq('id', orgId)
-          .single()
+        const data = await getOrgWithEvents(orgId)
         setOrg(data as DBOrg)
         const eventIds = ((data as DBOrg)?.events ?? []).map(e => e.id)
         if (eventIds.length > 0) {
-          const { data: rsvpRows } = await supabase
-            .from('rsvps')
-            .select('event_id')
-            .in('event_id', eventIds)
-          const counts: Record<string, number> = {}
-          for (const row of rsvpRows ?? []) {
-            counts[row.event_id] = (counts[row.event_id] ?? 0) + 1
-          }
-          setRsvpCounts(counts)
+          setRsvpCounts(await countRsvpsForEvents(eventIds))
         }
       } finally {
         setLoading(false)
@@ -74,31 +60,15 @@ export default function OrgPage() {
   if (!org) return <p className="text-ink-2">Org not found.</p>
 
   async function handleFollow() {
-    const supabase = createClient()
-    // Use the E2E test user when configured; otherwise use normal Supabase auth.
-    const userId = await getCurrentUserId(supabase)
-    if (!userId) return
-  
-    if (viewerRole === 'follower') {
-      await supabase.from('memberships').delete().eq('user_id', userId).eq('org_id', orgId)
-    } else {
-      await supabase.from('memberships').insert({ user_id: userId, org_id: orgId, role: 'follower' })
-    }
-  
+    if (viewerRole === 'follower') await unfollowOrg(orgId)
+    else await followOrg(orgId)
     refetch()
   }
 
   async function handleRsvp(eventId: string) {
-    const supabase = createClient()
-    // Use the E2E test user when configured; otherwise use normal Supabase auth.
-    const userId = await getCurrentUserId(supabase)
-    if (!userId) return
     const removing = hasRsvp(eventId)
-    if (removing) {
-      await supabase.from('rsvps').delete().eq('user_id', userId).eq('event_id', eventId)
-    } else {
-      await supabase.from('rsvps').insert({ user_id: userId, event_id: eventId })
-    }
+    if (removing) await removeRsvp(eventId)
+    else await addRsvp(eventId)
     refetchRsvps()
     setRsvpCounts(prev => ({
       ...prev,

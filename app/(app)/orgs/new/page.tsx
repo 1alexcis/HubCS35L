@@ -1,8 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { createOrgAsAdmin } from '@/lib/db'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/org-logo'
@@ -31,39 +30,13 @@ export default function NewOrgPage() {
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    // Use the E2E test user when configured; otherwise use normal Supabase auth.
-    const userId = await getCurrentUserId(supabase)
-
-    if (!userId) {
-      setError('You need to be logged in to create an org.')
+    try {
+      const orgId = await createOrgAsAdmin(name.trim(), description.trim())
+      window.location.href = `/orgs/${orgId}`
+    } catch (err) {
+      setError((err as Error).message)
       setLoading(false)
-      return
     }
-
-    const { data: org, error: orgErr } = await supabase
-      .from('organizations')
-      .insert({ name: name.trim(), description: description.trim() })
-      .select('id')
-      .single()
-
-    if (orgErr || !org) {
-      setError(orgErr?.message ?? 'Something went wrong creating the org.')
-      setLoading(false)
-      return
-    }
-
-    const { error: membErr } = await supabase
-      .from('memberships')
-      .insert({ user_id: userId, org_id: org.id, role: 'admin' })
-
-    if (membErr) {
-      setError(membErr.message)
-      setLoading(false)
-      return
-    }
-
-    window.location.href = `/orgs/${org.id}`
   }
 
   return (

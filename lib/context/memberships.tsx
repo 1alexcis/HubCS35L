@@ -1,8 +1,7 @@
 'use client'
 /* React context that shares the current user's org memberships across the app */
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentUserId } from '@/lib/supabase/current-user'
+import { listMyMemberships } from '@/lib/db'
 
 type Membership = {
   id: string
@@ -32,17 +31,9 @@ export function MembershipsProvider({ children }: { children: React.ReactNode })
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const supabase = createClient()
     async function load() {
       try {
-        // Use the E2E test user when configured; otherwise use normal Supabase auth.
-        const userId = await getCurrentUserId(supabase)
-        if (!userId) return
-        const { data: rows } = await supabase
-          .from('memberships')
-          .select('*, organizations(*)')
-          .eq('user_id', userId)
-        setMemberships((rows ?? []) as Membership[])
+        setMemberships((await listMyMemberships()) as Membership[])
       } finally {
         setLoading(false)
       }
