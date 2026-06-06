@@ -1,4 +1,5 @@
-/* Hook that loads the list of organizations for the discover page */
+// [GenAI Use] Prompt: "Role: Next.js and Supabase expert. Context: Next.js App Router app with Supabase. Task: Create lib/hooks/useOrgs.ts that calls listOrganizations() from lib/db on mount. Return { orgs, loading } where loading starts true and turns false in finally."
+// [GenAI Use] LLM Response Start
 import { useEffect, useState } from 'react'
 import { listOrganizations } from '@/lib/db'
 
@@ -28,3 +29,5 @@ export function useOrgs() {
 
   return { orgs, loading }
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: Hook structure matched what I needed for the codebase. I later found useMemberships (same pattern) had a shared state bug and refactored it into a React Context on my own. So Claude created the boilerplate code, and then I refactored to improve.

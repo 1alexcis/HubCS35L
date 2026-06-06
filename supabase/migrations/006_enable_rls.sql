@@ -1,3 +1,5 @@
+-- [GenAI Use] Prompt: "Role: Supabase expert. Re-enable RLS on all tables with simplified policies. I defined the rules: users see/manage only their own memberships/rsvps, public events visible to all authenticated users, follower-only events visible to org members, admins can insert/update events."
+-- [GenAI Use] LLM Response Start
 -- enable RLS on all tables
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memberships ENABLE ROW LEVEL SECURITY;
@@ -35,3 +37,5 @@ CREATE POLICY "rsvps_delete" ON rsvps FOR DELETE USING (auth.uid() = user_id);
 CREATE POLICY "profiles_select" ON profiles FOR SELECT USING (true);
 CREATE POLICY "profiles_insert" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "profiles_update" ON profiles FOR UPDATE USING (auth.uid() = id);
+-- [GenAI Use] LLM Response End
+-- [GenAI Use] Reflection: Same as 002_rls in the sense that I wrote the rules and constraints, Claude handled the PostgreSQL syntax that we didn't learn directly in class.

@@ -1,3 +1,5 @@
+-- [GenAI Use] Prompt: "Role: Supabase/PostgreSQL expert. Context: Supabase app with 5 tables: profiles, organizations, memberships, events, rsvps. Task: Write RLS policies. Rules I defined: only authenticated users can read all orgs/profiles/memberships, users manage only their own rows, org admins (role='admin' in memberships) can update/delete their org's events and org."
+-- [GenAI Use] LLM Response Start
 alter table profiles enable row level security;
 alter table organizations enable row level security;
 alter table memberships enable row level security;
@@ -101,3 +103,5 @@ create policy "users can rsvp to events"
 
 create policy "users can delete their own rsvps"
   on rsvps for delete to authenticated using (auth.uid() = user_id);
+-- [GenAI Use] LLM Response End
+-- [GenAI Use] Reflection: I defined all the access rules myself. What Claude handled was the actual the RLS syntax (auth.uid(), exists subqueries) which isn't covered in class.
