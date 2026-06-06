@@ -1,3 +1,5 @@
+// [GenAI Use] Prompt: "Role: React and Tailwind CSS expert. Context: working on a foundation UI for a app to help discover UCLA clubs using Next.js and TypeScript. Objective: Develop a SectionHeader component that will have a title, subtitle (optional), and action slot for buttons (optional). Criteria: Clean TypeScript interfaces, minimal implementation."
+// [GenAI Use] LLM Response Start
 import type { ReactNode } from "react";
 
 interface SectionHeaderProps {
@@ -25,3 +27,5 @@ export function SectionHeader({ title, subtitle, action, className }: SectionHea
     </div>
   );
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: Showed that the action slot was positioned properly in relation to the title in the Upcoming and Following sections of the dashboard. Verified subtitle on the correct size compared to the title.

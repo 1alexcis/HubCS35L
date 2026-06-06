@@ -1,3 +1,5 @@
+// [GenAI Use] Prompt: "Role: React and Tailwind CSS expert. Project Description: I am creating a component library for a project to be used in a web app for discovering clubs at the UCLA created in Next.js and TypeScript. Task: Write an OrgLogo component that displays an abbreviation of the organization name in a rounded, coloured square, with a variable background colour and border radius. Criteria: Take size, color, radius as props; follow TypeScript best practice."
+// [GenAI Use] LLM Response Start
 import type { Org } from "@/lib/types";
 
 interface OrgLogoProps {
@@ -27,3 +29,5 @@ export function OrgLogo({ org, size = 36, radius, className }: OrgLogoProps) {
     </div>
   );
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: I believe that the border radius auto-calculation (size * 0.22) is correct for small and large sizes in the sidebar or on an org page. It is the confirmed fact that the inset shadow made the logo look tasteful and it was in line with the entire UI.

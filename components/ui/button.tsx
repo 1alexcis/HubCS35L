@@ -1,3 +1,5 @@
+// [GenAI Use] Prompt: "Role: React and Tailwind CSS expert. Context: I'm building foundational UI components for a UCLA club discovery app in Next.js and TypeScript. Task: Create a Button component with variants (primary, secondary, soft, ghost) and sizes (sm, md, lg) with optional icon support. Criteria: Clean TypeScript interfaces, minimal implementation, consistent with a design token system."
+// [GenAI Use] LLM Response Start
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/icon";
 
@@ -86,3 +88,5 @@ export function Button({
     </button>
   );
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: Tested each variant rendered correctly across the dashboard, org page, and admin composer. Verified the disabled state opacity and cursor behavior worked as expected. Adjusted sizing values to align with the spacing system used throughout the app.

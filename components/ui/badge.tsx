@@ -1,3 +1,5 @@
+// [GenAI Use] Prompt: "Role: React and Tailwind CSS expert. Context: I'm building a reusable component library for a UCLA club discovery app. Task: Create a Badge component that supports multiple color tones (neutral, blue, gold, green, red) and an optional icon, and a VisibilityChip component built on top of Badge that maps visibility values 'public' and 'followers' to the appropriate tone and icon. Criteria: Smallest possible implementation, fully typed with TypeScript."
+// [GenAI Use] LLM Response Start
 import type { CSSProperties, ReactNode } from "react";
 import type { Visibility } from "@/lib/types";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -67,3 +69,5 @@ export function VisibilityChip({ visibility }: { visibility: Visibility | null |
   const m = VISIBILITY_MAP[visibility as Visibility] ?? VISIBILITY_MAP.public;
   return <Badge tone={m.tone} icon={m.icon}>{m.label}</Badge>;
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: Tested VISIBILITY_MAP values as just the two specified in the database schema, ‘public' and ‘followers'. This behavior was properly supported for undefined visibility by the null guard of VisibilityChip. Amended label text to match what is in the admin composer and in the org page.

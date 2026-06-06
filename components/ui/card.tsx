@@ -1,3 +1,5 @@
+// [GenAI Use] Prompt: "Role: React and Tailwind CSS expert. In context: Developing basic UI elements for a club discovery website for UCLA using Next.js and TypeScript. Problem: Develop a Card component that has a padding, can have a hover state, and an option to add an onClick handler. Criteria: Clean TypeScript interfaces, minimal implementation, consistent with a design token system."
+// [GenAI Use] LLM Response Start
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 
 interface CardProps {
@@ -28,3 +30,5 @@ export function Card({ children, padding, hoverable, onClick, className, style }
     </div>
   );
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: Tested that the animation of hover (-translate-y-px) was not distracting. Verified default padding size (16px) was consistent with spacing across all instances of the card in the dashboard and on the org page.

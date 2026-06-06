@@ -1,4 +1,3 @@
-/* Helpers for formatting dates and times for display */
 import { TODAY } from "@/lib/data";
 
 export function fmtDate(d: Date, opts: { weekday?: "long" | "short" | "narrow"; month?: "long" | "short" | "narrow" | "2-digit" | "numeric" } = {}): string {

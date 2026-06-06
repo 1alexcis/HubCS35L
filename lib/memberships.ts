@@ -1,29 +1,27 @@
-/* Server side helpers for reading a user's org memberships */
 import type { Role } from './types'
 import type { RoleMap } from './memberships-client'
-import { getCurrentUserId } from './supabase/current-user'
 
 export type { RoleMap } from './memberships-client'
 export { getMyRolesMock } from './memberships-client'
 
 /**
- * Returns the signed-in user's org roles from the real memberships table.
- * Server only: call from Server Components or Route Handlers only.
+ * Returns the signedin user's org roles from the real memberships table.
+ * 
+ * Server only: call from Server Components or Route Handlers only
  *
- * Note: event visibility is ALSO enforced server-side by RLS in
- * supabase/migrations/002_rls.sql,  this client map is for UI convenience only.
+ * Note: event visibility is AdLSO enforced serverside by RLS in
+ * supabase/migrations/002_rls.sql, this client map is just ffor UI convenience only.
  */
 export async function getMyRolesFromDb(): Promise<RoleMap> {
   // Dynamic import keeps next/headers out of the client bundle.
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
-  // Use the E2E test user when configured; otherwise use normal Supabase auth.
-  const userId = await getCurrentUserId(supabase)
-  if (!userId) return {}
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return {}
   const { data } = await supabase
     .from('memberships')
     .select('org_id, role')
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
   if (!data) return {}
   return Object.fromEntries(
     (data as { org_id: string; role: string }[]).map(m => [m.org_id, m.role as Role])

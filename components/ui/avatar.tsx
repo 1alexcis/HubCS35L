@@ -1,3 +1,5 @@
+// [GenAI Use] Prompt: "Role: React and Tailwind CSS expert. Context: I'm building a component library for a UCLA club discovery web app using Next.js and TypeScript. Task: Create an Avatar component that displays user initials in a colored circle with configurable size and color. Criteria: Components should accept size and color as props and follow TypeScript best practices."
+// [GenAI Use] LLM Response Start
 interface AvatarProps {
   initials: string;
   name?: string;
@@ -31,3 +33,5 @@ export function Avatar({
     </div>
   );
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: Checked the created component for accuracy. Refined the formula used to scale font size (size * 0.42) and color tokens to align with our design system. Tested that all of the user initials in the sidebar and dashboard work well with it.
