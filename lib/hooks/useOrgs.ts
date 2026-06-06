@@ -1,4 +1,4 @@
-// [GenAI Use] Prompt: "Role: Next.js and Supabase expert. Context: Next.js App Router app with Supabase. Task: Create lib/hooks/useOrgs.ts that calls listOrganizations() from lib/db on mount. Return { orgs, loading } where loading starts true and turns false in finally."
+// [GenAI Use] Prompt: "Role: Next.js and Supabase expert. Context: Building a Next.js App Router app with Supabase. Task: Create lib/hooks/useOrgs.ts that queries supabase.from('organizations').select('*').order('name') on mount. Return { orgs, loading, error } where loading initializes true and sets false in the finally block. Import browser client from lib/supabase/client.ts. No React imports beyond useState and useEffect."
 // [GenAI Use] LLM Response Start
 import { useEffect, useState } from 'react'
 import { listOrganizations } from '@/lib/db'
@@ -30,4 +30,4 @@ export function useOrgs() {
   return { orgs, loading }
 }
 // [GenAI Use] LLM Response End
-// [GenAI Use] Reflection: Hook structure matched what I needed for the codebase. I later found useMemberships (same pattern) had a shared state bug and refactored it into a React Context on my own. So Claude created the boilerplate code, and then I refactored to improve.
+// [GenAI Use] Reflection: The hook that AI generated matched the structure I needed. However, after reviewing it deeper I found that useMemberships had a shared state problem where each component calling the hook independently had its own state instance. I redesigned it as a React Context entirely on my own to fix this.
