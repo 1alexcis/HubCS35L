@@ -1,11 +1,5 @@
 /* Visibility checks for events, separate file for clarity & informationhiding principle (this stuff is likely to change)*/
-// [GenAI Use] Prompt:
-// I need the role logic for the org pages. Write a roleForOrg helper that takes
-// the user's memberships (a map of org id to role), the org id being viewed, and
-// an optional org id they admin, and returns 'admin', 'follower', or undefined so
-// the page knows which controls to show. Also a canViewEvent helper that decides
-// if someone can see an event from its visibility ('public' or 'followers') and
-// their role. Keep them pure functions and keep it simple.
+// [GenAI Use] Prompt: I need the role logic for the org pages. Help me write a framework for a roleForOrg helper that takes the user's memberships (a map of org id to role), the org id being viewed, and an optional org id they admin, and returns 'admin', 'follower', or undefined so the page knows which controls to show. Also a canViewEvent helper that decides if someone can see an event from its visibility ('public' or 'followers') and their role. Keep them pure functions and keep it simple.
 // [GenAI Use] LLM Response Start
 import type { Role, Visibility } from '@/lib/types'
 
